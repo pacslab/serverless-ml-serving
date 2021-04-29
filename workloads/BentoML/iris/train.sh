@@ -19,4 +19,4 @@ echo -n $DOCKER_IMAGE > ./.dockerimage
 # print some info
 echo "Docker Image: $DOCKER_IMAGE"
 echo "command to test it out:"
-echo "docker run -p 5000:5000 $DOCKER_IMAGE --workers=2"
+echo "docker run --rm -p 5000:5000 $DOCKER_IMAGE --workers=2"
