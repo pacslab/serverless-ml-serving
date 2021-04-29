@@ -1,0 +1,24 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: iris-classifier
+  namespace: bentoml
+spec:
+  template:
+    spec:
+      containers:
+        - image: ghcr.io/nimamahmoudi/bentoml-iris-classifier:20210429201447
+          ports:
+          - containerPort: 5000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+            timeoutSeconds: 60
