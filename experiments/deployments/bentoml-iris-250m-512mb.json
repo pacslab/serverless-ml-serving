@@ -1,19 +1,14 @@
 {
   "name": "bentoml-iris",
-  "image": "ghcr.io/nimamahmoudi/conc-workloads-bench1:sha-5966a0e",
-  "env": {
-    "EXPERIMENT_NAME": "TEST1",
-    "REPORT_INTERVAL": "10",
-    "SOCKETIO_SERVER": "NO"
-  },
+  "image": "ghcr.io/nimamahmoudi/bentoml-iris-classifier:20210429201447",
+  "env": {},
   "opts": {
     "--limit": "'cpu=250m,memory=512Mi'"
   },
   "annotations": {
-    "autoscaling.knative.dev/panicThresholdPercentage": "1000",
     "autoscaling.knative.dev/target": 1,
-    "autoscaling.knative.dev/metric": "rps"
+    "autoscaling.knative.dev/metric": "concurrency"
   },
   "request_func": "bentoml-iris",
-  "is_rps": true
+  "is_rps": false
 }
