@@ -1,0 +1,15 @@
+{
+  "name": "tfserving-mobilenetv1",
+  "image": "ghcr.io/nimamahmoudi/tfserving-mobilenet:20210430005829",
+  "env": {},
+  "opts": {
+    "--limit": "'cpu=250m,memory=512Mi'",
+    "--port": "5000"
+  },
+  "annotations": {
+    "autoscaling.knative.dev/target": 1,
+    "autoscaling.knative.dev/metric": "concurrency"
+  },
+  "request_func": "tfserving-mobilenetv1",
+  "is_rps": false
+}
