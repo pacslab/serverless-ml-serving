@@ -3,7 +3,9 @@
   "image": "ghcr.io/nimamahmoudi/bentoml-iris-classifier:20210429201447",
   "env": {},
   "opts": {
-    "--limit": "'cpu=250m,memory=512Mi'"
+    "--limit": "'cpu=250m,memory=512Mi'",
+    "--request": "'cpu=250m,memory=512Mi'",
+    "--port": "5000"
   },
   "annotations": {
     "autoscaling.knative.dev/target": 1,
