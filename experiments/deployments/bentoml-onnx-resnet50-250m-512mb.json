@@ -1,6 +1,6 @@
 {
   "name": "bentoml-onnx-resnet50",
-  "image": "ghcr.io/nimamahmoudi/bentoml-onnx-resnet50:20210430002258",
+  "image": "ghcr.io/nimamahmoudi/bentoml-onnx-resnet50-b64:20210505124300",
   "env": {},
   "opts": {
     "--limit": "'cpu=250m,memory=512Mi'",
