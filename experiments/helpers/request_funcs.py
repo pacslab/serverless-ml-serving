@@ -31,15 +31,14 @@ iris_featurs = [list(d['features'].numpy().tolist()) for d in ds_iris]
 
 
 # Iris on BentoML
-def request_bentoml_iris():
-    features = random.choice(iris_featurs)
-    predict_request = [features]
+def request_bentoml_iris(batch_size=1):
+    predict_request = random.choices(iris_featurs, k=batch_size)
     response = requests.post(
         default_server_urls[WORKLOAD_BENTOML_IRIS_NAME], json=predict_request
     )
     response.raise_for_status()
     return {
-        'prediction': response.json()[0],
+        'prediction': response.json(),
         'response_time_ms': response.elapsed.total_seconds()*1000,
     }
 
@@ -78,7 +77,9 @@ def preprocess_mobilenet(image_np):
     image_input = image_np.numpy()
     image_parsed = tf.keras.applications.mobilenet.preprocess_input(image_input)
     image_parsed = image_parsed.tolist()
-    predict_request = {"instances" : [{"inputs": image_parsed}]}
+    # instances will be added later on the request function
+    # predict_request = {"instances" : [{"inputs": image_parsed}]}
+    predict_request = {"inputs": image_parsed}
     return predict_request
 
 
@@ -93,9 +94,17 @@ ds_imagenet_images_bentoml_files = [{
 
 
 # bentoml onnx resnet50 workload
-def request_bentoml_onnx_resnet50():
-    files = random.choice(ds_imagenet_images_bentoml_files)
-    response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], files=files)
+def request_bentoml_onnx_resnet50(batch_size=1):
+    # this currently has issues with batch!
+    if batch_size > 1:
+        raise NotImplementedError('cannot handle batch_size > 1 for image input')
+
+    files = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
+    prep_files = {}
+    for i, file in enumerate(files):
+        prep_files[f"image{i}"] = file['image']
+
+    response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], files=prep_files)
     response.raise_for_status()
     return {
         'prediction': response.json(),
@@ -104,26 +113,36 @@ def request_bentoml_onnx_resnet50():
 
 
 print('extracting base64 files')
+# ds_imagenet_images_tfserving_b64 = [
+#     '{"instances" : [{"b64": "%s"}]}' % convert_image_to_b64(image_np)
+#     for image_np in tqdm(ds_imagenet_images)
+# ]
 ds_imagenet_images_tfserving_b64 = [
-    '{"instances" : [{"b64": "%s"}]}' % convert_image_to_b64(image_np)
+    { "b64" : convert_image_to_b64(image_np) }
     for image_np in tqdm(ds_imagenet_images)
 ]
 
 
 # tfserving resnet v2 workload
-def request_tfserving_resnetv2():
-    predict_request = random.choice(ds_imagenet_images_tfserving_b64)
-    response = requests.post(default_server_urls[WORKLOAD_TFSERVING_RESNETV2], data=predict_request)
+def request_tfserving_resnetv2(batch_size=1):
+    files = random.choices(ds_imagenet_images_tfserving_b64, k=batch_size)
+    predict_request = {
+        "instances": files,
+    }
+
+    response = requests.post(default_server_urls[WORKLOAD_TFSERVING_RESNETV2], json=predict_request)
     response.raise_for_status()
 
-    prediction = response.json()['predictions'][0]
-    result = prediction['probabilities']
-    p = np.array(result[1:])
-    p = p.reshape((1,1000))
-    prediction = imagenet_utils.decode_predictions(p)
+    resp_predictions = []
+    for prediction in response.json()['predictions']:
+        result = prediction['probabilities']
+        p = np.array(result[1:])
+        p = p.reshape((1,1000))
+        p = imagenet_utils.decode_predictions(p)
+        resp_predictions.append([c[1] for c in p[0]])
 
     return {
-        'prediction': [c[1] for c in prediction[0]],
+        'prediction': resp_predictions,
         'response_time_ms': response.elapsed.total_seconds()*1000,
     }
 
@@ -131,20 +150,23 @@ def request_tfserving_resnetv2():
 print('preprocessing for mobilenet')
 ds_imagenet_images_tfserving_mobilenet = [preprocess_mobilenet(image_np) for image_np in tqdm(ds_imagenet_images)]
 
-def request_tfserving_mobilenetv1():
-    predict_request = random.choice(ds_imagenet_images_tfserving_mobilenet)
+def request_tfserving_mobilenetv1(batch_size=1):
+    predict_files = random.choices(ds_imagenet_images_tfserving_mobilenet, k=batch_size)
+    predict_request = {"instances" : predict_files}
     response = requests.post(default_server_urls[WORKLOAD_TFSERVING_MOBILENETV1], json=predict_request)
     response.raise_for_status()
 
-    prediction = response.json()['predictions'][0]
-    p = np.array(prediction[1:])
-    # apply softmax: https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb
-    p = np.exp(p)/sum(np.exp(p))
-    p = p.reshape((1,1000))
-    prediction = imagenet_utils.decode_predictions(p)
+    resp_predictions = []
+    for prediction in response.json()['predictions']:
+        p = np.array(prediction[1:])
+        # apply softmax: https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb
+        p = np.exp(p)/sum(np.exp(p))
+        p = p.reshape((1,1000))
+        p = imagenet_utils.decode_predictions(p)
+        resp_predictions.append([c[1] for c in p[0]])
 
     return {
-        'prediction': [c[1] for c in prediction[0]],
+        'prediction': resp_predictions,
         'response_time_ms': response.elapsed.total_seconds()*1000,
     }
 
@@ -161,11 +183,12 @@ if __name__ == "__main__":
     print('Starting testing...')
 
     for k in workload_funcs:
-        print(f'running {k} workload function')
-        try:
-            for count in range(10):
-                result = workload_funcs[k]()
-                print(f'[{count+1}]: result: {result}')
-        except Exception:
-            print('exception occured:')
-            traceback.print_exc()
+        for batch_size in [1,2,5]:
+            print(f'running {k} workload function, batch_size: {batch_size}')
+            try:
+                for count in range(10):
+                    result = workload_funcs[k](batch_size=batch_size)
+                    print(f'[{count+1}]: result: {result}')
+            except Exception:
+                print('exception occured:')
+                traceback.print_exc()
