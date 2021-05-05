@@ -88,23 +88,39 @@ ds_imagenet = tfds.load('imagenet_v2', split='test', shuffle_files=False)
 print('resizing images')
 ds_imagenet_images = [preprocess_imagenet_224(d) for d in tqdm(ds_imagenet.take(IMAGE_SAMPLE_SIZE))]
 print('converting to bentoml files')
+
+# ds_imagenet_images_bentoml_files = [{
+#     'image': ('test.jpg', convert_image_to_bytes(image_np))
+# } for image_np in tqdm(ds_imagenet_images)]
+
+# base64 version of file submission
 ds_imagenet_images_bentoml_files = [{
-    'image': ('test.jpg', convert_image_to_bytes(image_np))
+    'b64': convert_image_to_b64(image_np)
 } for image_np in tqdm(ds_imagenet_images)]
 
 
 # bentoml onnx resnet50 workload
+# def request_bentoml_onnx_resnet50(batch_size=1):
+#     # this currently has issues with batch!
+#     if batch_size > 1:
+#         raise NotImplementedError('cannot handle batch_size > 1 for image input')
+
+#     files = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
+#     prep_files = {}
+#     for i, file in enumerate(files):
+#         prep_files[f"image{i}"] = file['image']
+
+#     response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], files=prep_files)
+#     response.raise_for_status()
+#     return {
+#         'prediction': response.json(),
+#         'response_time_ms': response.elapsed.total_seconds()*1000,
+#     }
+
+# bentoml onnx resnet50 workload with base64 decoding
 def request_bentoml_onnx_resnet50(batch_size=1):
-    # this currently has issues with batch!
-    if batch_size > 1:
-        raise NotImplementedError('cannot handle batch_size > 1 for image input')
-
-    files = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
-    prep_files = {}
-    for i, file in enumerate(files):
-        prep_files[f"image{i}"] = file['image']
-
-    response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], files=prep_files)
+    predict_request = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
+    response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], json=predict_request)
     response.raise_for_status()
     return {
         'prediction': response.json(),
