@@ -1,0 +1,5 @@
+bentoml
+onnx>=1.7.0
+onnxruntime>=1.4.0
+pandas>=1.2.4
+matplotlib>=3.4.1
