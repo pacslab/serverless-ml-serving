@@ -28,8 +28,7 @@ global.app = app
 // Parse incoming json
 app.use(express.json())
 // Parse form data
-const bodyParser = require('body-parser')
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true }))
 // CORS
 const cors = require('cors')
 app.use(cors())

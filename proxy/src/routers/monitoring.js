@@ -9,7 +9,7 @@ const config = require(__basedir + '/config')
 
 
 router.get('/monitoring/test', (req, res) => {
-  logger.log('debug','test')
+  logger.log('debug','monitoring test')
   res.status(200).send({
     msg: 'This is monitoring test',
   })
