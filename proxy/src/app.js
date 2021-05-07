@@ -37,6 +37,8 @@ app.use(cors())
 // add routers
 const monitoringRouter = require('./routers/monitoring')
 app.use(monitoringRouter)
+const smartProxyRouter = require('./routers/smartProxy')
+app.use(smartProxyRouter)
 
 // Home Page
 app.get('', (req, res) => {
