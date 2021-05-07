@@ -19,6 +19,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-request-id": "^1.4.1",
     "memoizee": "^0.4.14",
     "socket.io": "^2.3.0",
     "winston": "^3.3.3"

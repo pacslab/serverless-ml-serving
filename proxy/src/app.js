@@ -9,6 +9,7 @@ const logger = require(__basedir + '/helpers/logger')
 const express = require('express')
 const http = require('http')
 const socketio = require('socket.io')
+const addRequestId = require('express-request-id')()
 
 // configurations
 const config = require(__basedir + '/config')
@@ -32,6 +33,8 @@ app.use(express.urlencoded({ extended: true }))
 // CORS
 const cors = require('cors')
 app.use(cors())
+// request id
+app.use(addRequestId)
 
 
 // add routers
