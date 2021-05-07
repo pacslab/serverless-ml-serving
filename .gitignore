@@ -114,3 +114,6 @@ dmypy.json
 .pyre/
 .vscode
 tmp
+
+# node modules
+node_modules
