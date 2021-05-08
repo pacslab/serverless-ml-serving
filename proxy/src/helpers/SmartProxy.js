@@ -33,8 +33,8 @@ class SmartProxy {
   proxy(req, res) {
     this.logReq('Received request', req)
 
-    // TODO: extract request body from the req object
-    const requestBody = [1, 2, 3, 4]
+    // extract request body from the req object
+    const requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
 
     // create queue object
     const queueObject = {

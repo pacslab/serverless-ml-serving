@@ -26,7 +26,7 @@ router.get('/proxy/test', (req, res) => {
   })
 })
 
-router.get('/proxy/:serviceName', (req, res) => {
+router.post('/proxy/:serviceName', (req, res) => {
   const serviceName = req.params.serviceName
   const serviceProxy = serviceSmartProxies[serviceName]
 
