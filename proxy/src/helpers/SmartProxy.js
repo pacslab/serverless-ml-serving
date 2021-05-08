@@ -1,4 +1,4 @@
-const e = require("express")
+const axios = require('axios')
 
 // local imports
 const logger = require(__basedir + '/helpers/logger')
@@ -83,7 +83,7 @@ class SmartProxy {
 
     const queueLength = this.getQueueLength()
     // send a request if queue is full, then schedule for next one
-    if(queueLength >= this.maxBufferSize) {
+    if (queueLength >= this.maxBufferSize) {
       this.log('queue full, *** dispatching ***')
       this.dispatch()
       // function will automatically be called by dispatch
@@ -105,17 +105,41 @@ class SmartProxy {
     const dispatchLength = Math.min(queueLength, this.maxBufferSize)
 
     // pop requests from the buffer and update the buffer
-    const sendBuffer = this.requestBuffer.slice(0,dispatchLength)
+    const sendBuffer = this.requestBuffer.slice(0, dispatchLength)
     this.requestBuffer = this.requestBuffer.slice(dispatchLength)
 
     const sendBufferIds = sendBuffer.map((v) => v.req.id).join(',')
     this.log(`dispatching ids: ${sendBufferIds}`)
 
-    // TODO: send the request and respond to the requests
+    // send the request and respond to the requests
+    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m))
 
     // reschedule next timeout
     this.scheduleNextTimeout()
   }
+}
+
+const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
+  const sendData = sendBuffer.map((v) => v.requestBody)
+  try {
+    logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
+    const response = await axios.post(upstreamUrl, sendData)
+    const data = response.data
+    logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
+    
+    for (let i=0; i<sendBuffer.length; i++) {
+      sendBuffer[i].res.send([data[i]])
+    }
+  } catch (error) {
+    logger.log('error', `[FETCH] error with upstream request: ${error}`)
+
+    sendBuffer.forEach((v) => {
+      v.res.status(500).send({
+        error
+      })
+    })
+  }
+
 }
 
 module.exports = SmartProxy

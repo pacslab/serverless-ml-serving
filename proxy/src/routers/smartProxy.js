@@ -35,11 +35,11 @@ router.get('/proxy/:serviceName', (req, res) => {
   if (serviceProxy) {
     logger.log('info', `[PROXY] received request for service ${serviceName}`)
     serviceProxy.proxy(req, res)
-    res.status(200).send({msg: 'done!'})
+    // res.status(200).send({msg: 'done!'})
   } else {
     logger.log('info', `[PROXY] service not found: ${serviceName}`)
     res.status(404).send({
-      err: `service ${serviceName} not found!`
+      error: `service ${serviceName} not found!`
     })
   }
 })
