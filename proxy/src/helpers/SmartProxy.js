@@ -141,7 +141,7 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
       req.respHeader[headerPrefix + 'responseTime'] = responseAt - req.receivedAt
       req.respHeader[headerPrefix + 'queueTime'] = requestAt - req.receivedAt
 
-
+      // setting the headers and sending the results
       sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
     }
   } catch (error) {
