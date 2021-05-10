@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  node:
+    build: .
+    environment: 
+      - "MONGO_CONN_URL=ABC"
+    command: bash -c "npm install -g nodemon && npm run dockerdev"
+    volumes:
+      - ./src:/usr/src/app/src
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo
+    restart: always
+    volumes: 
+      - mongodb-data:/data/db
+    expose:
+      - 27017
+
+## By default this config uses default local driver,
+## For custom volumes replace with volume driver configuration.
+volumes:
+  mongodb-data:
