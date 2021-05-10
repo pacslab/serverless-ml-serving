@@ -12,6 +12,8 @@ class SmartMonitor {
   constructor(workloadConfig) {
     this.setWorkloadConfig(workloadConfig)
 
+    // counts will reset to zero, but concurrency is continuously being updated
+    this.currentConcurrency = 0
     this.resetCounts()
     this.resetHistory()
 
@@ -43,26 +45,31 @@ class SmartMonitor {
   // returns the current state of the system, including estimated RPS and concurrency
   getMonitorStatus() {
     // get some parameters out of current monitor status
-    const {
-      currentConcurrency,
-    } = this.getCurrentMonitorStatus()
+    const currentMonitorStatus = this.getCurrentMonitorStatus()
 
-    let { 
-      currentArrivalCount: historyArrivalCounts
-    } = this.historyStatus
-    // make adjustments if necessary
-    historyArrivalCounts = (historyArrivalCounts) ? historyArrivalCounts : []
-    // default to 1 to avoid division by zero (numerator will automatically be zero when no data)
-    const currentWindowLength = historyArrivalCounts.length ? historyArrivalCounts.length : 1
-
-    const windowRPS = arraySum(historyArrivalCounts) / currentWindowLength
+    const windowKeys = [
+      'currentArrivalCount',
+      'currentDepartureCount',
+      'currentConcurrency',
+      'currentErrorCount',
+      'currentDispatchCount',
+    ]
+    const windowedHistoryValues = {}
+    for (let k of windowKeys) {
+      const newK = k.replace('current', '')
+      let historyCounts = this.historyStatus[k]
+      // refine arrays to avoid undefined
+      historyCounts = (historyCounts) ? historyCounts : []
+      // calculate rates
+      const currentWindowLength = historyCounts.length ? historyCounts.length : 1
+      windowedHistoryValues[newK] = arraySum(historyCounts) / currentWindowLength
+    }
 
     return {
-      currentConcurrency,
-      // historyArrivalCounts,
       // how many seconds in a monitoring window
       monitoringWindowLength: this.monitoringWindowLength,
-      windowRPS,
+      currentMonitorStatus,
+      windowedHistoryValues,
     }
   }
   periodInterval() {
@@ -97,7 +104,6 @@ class SmartMonitor {
     this.currentArrivalCount = 0
     this.currentErrorCount = 0
     this.currentDepartureCount = 0
-    this.currentConcurrency = 0
     this.currentDispatchCount = 0
   }
   recordArrival() {
