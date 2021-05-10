@@ -132,17 +132,18 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor)
   const sendData = sendBuffer.map((v) => v.requestBody)
   try {
     logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
-    const requestAt = Date.now()
     smartMonitor.recordDispatch(sendBuffer.length)
+    const requestAt = Date.now()
     const response = await axios.post(upstreamUrl, sendData)
     const responseAt = Date.now()
+    const upstreamResponseTime = responseAt - requestAt
     const data = response.data
     logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
     
     for (let i=0; i<sendBuffer.length; i++) {
       const req = sendBuffer[i].req
       req.respHeader[headerPrefix + 'responseAt'] = responseAt
-      req.respHeader[headerPrefix + 'upstreamReponseTime'] = responseAt - requestAt
+      req.respHeader[headerPrefix + 'upstreamResponseTime'] = upstreamResponseTime
       req.respHeader[headerPrefix + 'upstreamRequestCount'] = sendBuffer.length
       req.respHeader[headerPrefix + 'responseTime'] = responseAt - req.receivedAt
       req.respHeader[headerPrefix + 'queueTime'] = requestAt - req.receivedAt
