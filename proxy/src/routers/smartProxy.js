@@ -14,7 +14,6 @@ const {
 
 
 let serviceSmartProxies = {}
-let serviceSmartMonitors = {}
 for (let serviceName in workloadConfigs) {
   let workloadConfig = workloadConfigs[serviceName]
 
@@ -22,7 +21,6 @@ for (let serviceName in workloadConfigs) {
   const smartProxy = new SmartProxy(workloadConfig, smartMonitor)
 
   serviceSmartProxies[serviceName] = smartProxy
-  serviceSmartMonitors[serviceName] = smartMonitor
 }
 
 router.get('/proxy/test', (req, res) => {
@@ -44,6 +42,21 @@ router.post('/proxy/:serviceName', (req, res) => {
     // res.status(200).send({msg: 'done!'})
   } else {
     logger.log('info', `[PROXY] service not found: ${serviceName}`)
+    res.status(404).send({
+      error: `service ${serviceName} not found!`
+    })
+  }
+})
+
+router.get('/proxy-monitor/:serviceName', (req, res) => {
+  const serviceName = req.params.serviceName
+  const serviceProxy = serviceSmartProxies[serviceName]
+
+  if (serviceProxy) {
+    logger.log('info', `[MONITOR-STAT] received request for service ${serviceName}`)
+    res.status(200).send(serviceProxy.smartMonitor.getMonitorStatus())
+  } else {
+    logger.log('info', `[MONITOR-STAT] service not found: ${serviceName}`)
     res.status(404).send({
       error: `service ${serviceName} not found!`
     })
