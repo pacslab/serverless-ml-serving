@@ -4,6 +4,7 @@ const router = new express.Router()
 // local imports
 const logger = require(__basedir + '/helpers/logger')
 const SmartProxy = require(__basedir + '/helpers/SmartProxy')
+const SmartMonitor = require(__basedir + '/helpers/SmartMonitor')
 
 // configurations
 const config = require(__basedir + '/config')
@@ -13,10 +14,15 @@ const {
 
 
 let serviceSmartProxies = {}
+let serviceSmartMonitors = {}
 for (let serviceName in workloadConfigs) {
   let workloadConfig = workloadConfigs[serviceName]
-  const smartProxy = new SmartProxy(workloadConfig)
+
+  const smartMonitor = new SmartMonitor(workloadConfig)
+  const smartProxy = new SmartProxy(workloadConfig, smartMonitor)
+
   serviceSmartProxies[serviceName] = smartProxy
+  serviceSmartMonitors[serviceName] = smartMonitor
 }
 
 router.get('/proxy/test', (req, res) => {

@@ -11,7 +11,11 @@ const headerPrefix = 'X-SmartProxy-'
 class SmartProxy {
   loggerPrefix = '[SPROXY]'
   logLevel = 'debug'
-  constructor(workloadConfig) {
+  constructor(workloadConfig, smartMonitor) {
+    // smart monitor object
+    this.smartMonitor = smartMonitor
+
+    // setting workload config
     this.setWorkloadConfig(workloadConfig)
 
     // buffer for incoming requests
@@ -21,6 +25,7 @@ class SmartProxy {
   }
   setWorkloadConfig(workloadConfig) {
     this.workloadConfig = workloadConfig
+    this.smartMonitor.setWorkloadConfig(workloadConfig)
     // we need super fast access to some workload config
     this.upstreamUrl = workloadConfig.upstreamUrl
     this.maxBufferTimeoutMs = workloadConfig.maxBufferTimeoutMs
@@ -34,6 +39,7 @@ class SmartProxy {
   }
   proxy(req, res) {
     this.logReq('Received request', req)
+    this.smartMonitor.recordArrival()
 
     // extract request body from the req object
     const requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
@@ -109,25 +115,25 @@ class SmartProxy {
     const dispatchLength = Math.min(queueLength, this.maxBufferSize)
 
     // pop requests from the buffer and update the buffer
-    const sendBuffer = this.requestBuffer.slice(0, dispatchLength)
-    this.requestBuffer = this.requestBuffer.slice(dispatchLength)
+    const sendBuffer = this.requestBuffer.splice(0, dispatchLength)
 
     const sendBufferIds = sendBuffer.map((v) => v.req.id).join(',')
     this.log(`dispatching ids: ${sendBufferIds}`)
 
     // send the request and respond to the requests
-    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m))
+    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m), this.smartMonitor)
 
     // reschedule next timeout
     this.scheduleNextTimeout()
   }
 }
 
-const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
+const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor) => {
   const sendData = sendBuffer.map((v) => v.requestBody)
   try {
     logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
     const requestAt = Date.now()
+    smartMonitor.recordDispatch(sendBuffer.length)
     const response = await axios.post(upstreamUrl, sendData)
     const responseAt = Date.now()
     const data = response.data
@@ -143,6 +149,9 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
 
       // setting the headers and sending the results
       sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
+
+      // record departure
+      smartMonitor.recordDeparture()
     }
   } catch (error) {
     logger.log('error', `[FETCH] error with upstream request: ${error}`)
@@ -152,6 +161,9 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
         error: error.message
       })
     })
+
+    // record departure
+    smartMonitor.recordError()
 
     throw error
   }
