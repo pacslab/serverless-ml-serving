@@ -6,6 +6,8 @@ const logger = require(__basedir + '/helpers/logger')
 // configurations
 const config = require(__basedir + '/config')
 
+const headerPrefix = 'X-SmartProxy-'
+
 class SmartProxy {
   loggerPrefix = '[SPROXY]'
   logLevel = 'debug'
@@ -52,7 +54,9 @@ class SmartProxy {
     }
 
     // record queue length on arrival
-    req.queueLengthBefore = queueLength
+    req.respHeader = {}
+    req.respHeader[headerPrefix + 'queuePosition'] = queueLength
+    req.respHeader[headerPrefix + 'receivedAt'] = req.receivedAt
 
     // enqueue the request and schedule timeout
     this.requestBuffer.push(queueObject)
@@ -123,21 +127,33 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
   const sendData = sendBuffer.map((v) => v.requestBody)
   try {
     logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
+    const requestAt = Date.now()
     const response = await axios.post(upstreamUrl, sendData)
+    const responseAt = Date.now()
     const data = response.data
     logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
     
     for (let i=0; i<sendBuffer.length; i++) {
-      sendBuffer[i].res.send([data[i]])
+      const req = sendBuffer[i].req
+      req.respHeader[headerPrefix + 'responseAt'] = responseAt
+      req.respHeader[headerPrefix + 'upstreamReponseTime'] = responseAt - requestAt
+      req.respHeader[headerPrefix + 'upstreamRequestCount'] = sendBuffer.length
+      req.respHeader[headerPrefix + 'reponseTime'] = responseAt - req.receivedAt
+      req.respHeader[headerPrefix + 'queueTime'] = requestAt - req.receivedAt
+
+
+      sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
     }
   } catch (error) {
     logger.log('error', `[FETCH] error with upstream request: ${error}`)
 
     sendBuffer.forEach((v) => {
       v.res.status(500).send({
-        error
+        error: error.message
       })
     })
+
+    throw error
   }
 
 }
