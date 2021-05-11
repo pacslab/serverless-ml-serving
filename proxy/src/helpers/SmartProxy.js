@@ -140,6 +140,9 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor)
     const data = response.data
     logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
 
+    // record dispatch results response time
+    smartMonitor.recordUpstreamResult(sendBuffer.length, upstreamResponseTime)
+
     for (let i = 0; i < sendBuffer.length; i++) {
       const req = sendBuffer[i].req
       req.respHeader[headerPrefix + 'responseAt'] = responseAt
