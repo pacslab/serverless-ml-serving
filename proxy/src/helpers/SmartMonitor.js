@@ -4,10 +4,38 @@
 const logger = require(__basedir + '/helpers/logger')
 
 // custom functions
-const arraySum = (arr) => (arr.length > 0) ? arr.reduce((a, b) => a + b) : 0
+const arraySum = (arr) => arr.reduce((a, b) => a + b, 0)
+const arrayMean = (arr) => (arraySum(arr) / arr.length)
+// can be used with .filter to get only unique values
 const onlyUnique = (value, index, self) => self.indexOf(value) === index
+// get array quantiles
+const arrayQuantile = (sorted, q) => {
+  const pos = (sorted.length - 1) * q;
+  const base = Math.floor(pos);
+  console.log('base', base)
+  const rest = pos - base;
+  if (sorted[base + 1] !== undefined) {
+    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+  } else {
+    return sorted[base];
+  }
+}
 // sort in ascending order
 const asc = arr => arr.sort((a, b) => a - b)
+
+// response time stats
+const getResponseTimeStats = (arr) => {
+  const sorted = asc(arr)
+  const q50 = arr.length ? arrayQuantile(sorted, 0.50) : null
+  const q95 = arr.length ? arrayQuantile(sorted, 0.95) : null
+  const mean = arr.length ? arrayMean(arr) : null
+
+  return {
+    q50,
+    q95,
+    mean,
+  }
+}
 
 // main class
 class SmartMonitor {
@@ -61,7 +89,10 @@ class SmartMonitor {
     ]
     const windowedHistoryValues = {}
     for (let k of windowKeys) {
-      const newK = k.replace('current', '')
+      // create the new key to be used
+      let newK = k.replace('current', '').replace('Count', '') + 'Average'
+      newK = newK.charAt(0).toLowerCase() + newK.slice(1)
+
       let historyCounts = this.historyStatus[k]
       // refine arrays to avoid undefined
       historyCounts = (historyCounts) ? historyCounts : []
@@ -69,17 +100,32 @@ class SmartMonitor {
       const currentWindowLength = historyCounts.length ? historyCounts.length : 1
       windowedHistoryValues[newK] = arraySum(historyCounts) / currentWindowLength
     }
+    for (let k in windowedHistoryValues) {
+      const newK = k.replace('Average', 'Rate')
+      // skip if it is concurrency
+      if (newK.startsWith('concurrency')) continue
+      // divide the average by the window time to get the rate
+      windowedHistoryValues[newK] = windowedHistoryValues[k] / (this.monitoringPeriodInterval / 1000)
+    }
 
     const windowedUpstreamResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
 
     const windowedUpstreamResponseTime = {}
     windowedUpstreamResponseTimesHistory.forEach((v) => {
       // empty array if not defined
-      if(windowedUpstreamResponseTime[v[0]] === undefined) {
-        windowedUpstreamResponseTime[v[0]] = []
+      if (windowedUpstreamResponseTime[v[0]] === undefined) {
+        windowedUpstreamResponseTime[v[0]] = {
+          'values': [],
+        }
       }
-      windowedUpstreamResponseTime[v[0]].push(v[1]) 
+      windowedUpstreamResponseTime[v[0]]['values'].push(v[1])
     })
+    for(let k in windowedUpstreamResponseTime) {
+      const wrt = windowedUpstreamResponseTime[k]
+      const values = wrt['values']
+      const WRTStats = getResponseTimeStats(values)
+      wrt['stats'] = WRTStats
+    }
 
     // get a list of unique batch sizes
     // let windowedUpstreamResponseBatchSizes = windowedUpstreamResponseTimesHistory.map((v) => v[0])
@@ -90,10 +136,13 @@ class SmartMonitor {
       // how many seconds in a monitoring window
       monitoringWindowLength: this.monitoringWindowLength,
       monitoringResponseTimeLength: this.monitoringResponseTimePeriodCount * this.monitoringPeriodInterval / 1000,
+      monitoringPeriodInterval: this.monitoringPeriodInterval / 1000,
       currentMonitorStatus,
       windowedHistoryValues,
-      windowedUpstreamResponseTime,
-      windowedUpstreamResponseBatchSizes,
+      windowedUpstream: {
+        responseTimes: windowedUpstreamResponseTime,
+        batchSizes: windowedUpstreamResponseBatchSizes,
+      }
     }
   }
   periodInterval() {
