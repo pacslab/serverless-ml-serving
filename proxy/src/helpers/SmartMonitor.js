@@ -56,6 +56,7 @@ class SmartMonitor {
     // we need super fast access to some workload config
     // this.monitoringPeriodInterval = workloadConfig.monitoringPeriodInterval
     // this.monitoringPeriodCount = workloadConfig.monitoringPeriodCount
+    // this.monitoringResponseTimePeriodCount = workloadConfig.monitoringResponseTimePeriodCount
 
     // how long each monitoring period is
     this.monitoringPeriodInterval = 2000
@@ -63,6 +64,7 @@ class SmartMonitor {
     this.monitoringPeriodCount = 10
     // how many periods are considered for response time monitoring
     this.monitoringResponseTimePeriodCount = 30
+    
     // the number of seconds in the monitoring window in total
     this.monitoringWindowLength = this.monitoringPeriodInterval * this.monitoringPeriodCount / 1000
   }
@@ -90,7 +92,7 @@ class SmartMonitor {
     const windowedHistoryValues = {}
     for (let k of windowKeys) {
       // create the new key to be used
-      let newK = k.replace('current', '').replace('Count', '') + 'Average'
+      let newK = k.replace('current', '').replace('Count', '')
       newK = newK.charAt(0).toLowerCase() + newK.slice(1)
 
       let historyCounts = this.historyStatus[k]
@@ -98,14 +100,10 @@ class SmartMonitor {
       historyCounts = (historyCounts) ? historyCounts : []
       // calculate rates
       const currentWindowLength = historyCounts.length ? historyCounts.length : 1
-      windowedHistoryValues[newK] = arraySum(historyCounts) / currentWindowLength
-    }
-    for (let k in windowedHistoryValues) {
-      const newK = k.replace('Average', 'Rate')
-      // skip if it is concurrency
-      if (newK.startsWith('concurrency')) continue
-      // divide the average by the window time to get the rate
-      windowedHistoryValues[newK] = windowedHistoryValues[k] / (this.monitoringPeriodInterval / 1000)
+      windowedHistoryValues[newK] = {
+        average: arraySum(historyCounts) / currentWindowLength,
+        rate: arraySum(historyCounts) / currentWindowLength / (this.monitoringPeriodInterval / 1000),
+      }
     }
 
     const windowedUpstreamResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
@@ -128,8 +126,6 @@ class SmartMonitor {
     }
 
     // get a list of unique batch sizes
-    // let windowedUpstreamResponseBatchSizes = windowedUpstreamResponseTimesHistory.map((v) => v[0])
-    // windowedUpstreamResponseBatchSizes = windowedUpstreamResponseBatchSizes.filter(onlyUnique)
     let windowedUpstreamResponseBatchSizes = asc(Object.keys(windowedUpstreamResponseTime).map(v => Number(v)))
 
     return {
