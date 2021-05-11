@@ -24,7 +24,7 @@ for (let serviceName in workloadConfigs) {
 }
 
 router.get('/proxy/test', (req, res) => {
-  logger.log('debug','[PROXY] proxy test')
+  logger.log('debug', '[PROXY] proxy test')
   res.status(200).send({
     msg: 'This is a proxy test',
   })

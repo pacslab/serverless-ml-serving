@@ -4,7 +4,7 @@
 const logger = require(__basedir + '/helpers/logger')
 
 // custom functions
-const arraySum = (arr) => (arr.length > 0) ? arr.reduce((a,b) => a + b) : 0
+const arraySum = (arr) => (arr.length > 0) ? arr.reduce((a, b) => a + b) : 0
 
 // main class
 class SmartMonitor {
@@ -78,7 +78,7 @@ class SmartMonitor {
 
     for (let k in currentMonitorStatus) {
       // make it an array if it isn't already one
-      if(!Array.isArray(this.historyStatus[k])) {
+      if (!Array.isArray(this.historyStatus[k])) {
         this.historyStatus[k] = []
       }
 
