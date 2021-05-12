@@ -6,10 +6,16 @@ const logger = require(__basedir + '/helpers/logger')
 // configurations
 const config = require(__basedir + '/config')
 
+const headerPrefix = 'X-SmartProxy-'
+
 class SmartProxy {
   loggerPrefix = '[SPROXY]'
   logLevel = 'debug'
-  constructor(workloadConfig) {
+  constructor(workloadConfig, smartMonitor) {
+    // smart monitor object
+    this.smartMonitor = smartMonitor
+
+    // setting workload config
     this.setWorkloadConfig(workloadConfig)
 
     // buffer for incoming requests
@@ -19,6 +25,7 @@ class SmartProxy {
   }
   setWorkloadConfig(workloadConfig) {
     this.workloadConfig = workloadConfig
+    this.smartMonitor.setWorkloadConfig(workloadConfig)
     // we need super fast access to some workload config
     this.upstreamUrl = workloadConfig.upstreamUrl
     this.maxBufferTimeoutMs = workloadConfig.maxBufferTimeoutMs
@@ -32,6 +39,7 @@ class SmartProxy {
   }
   proxy(req, res) {
     this.logReq('Received request', req)
+    this.smartMonitor.recordArrival()
 
     // extract request body from the req object
     const requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
@@ -52,7 +60,9 @@ class SmartProxy {
     }
 
     // record queue length on arrival
-    req.queueLengthBefore = queueLength
+    req.respHeader = {}
+    req.respHeader[headerPrefix + 'queuePosition'] = queueLength
+    req.respHeader[headerPrefix + 'receivedAt'] = req.receivedAt
 
     // enqueue the request and schedule timeout
     this.requestBuffer.push(queueObject)
@@ -105,39 +115,61 @@ class SmartProxy {
     const dispatchLength = Math.min(queueLength, this.maxBufferSize)
 
     // pop requests from the buffer and update the buffer
-    const sendBuffer = this.requestBuffer.slice(0, dispatchLength)
-    this.requestBuffer = this.requestBuffer.slice(dispatchLength)
+    const sendBuffer = this.requestBuffer.splice(0, dispatchLength)
 
     const sendBufferIds = sendBuffer.map((v) => v.req.id).join(',')
     this.log(`dispatching ids: ${sendBufferIds}`)
 
     // send the request and respond to the requests
-    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m))
+    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m), this.smartMonitor)
 
     // reschedule next timeout
     this.scheduleNextTimeout()
   }
 }
 
-const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc) => {
+const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor) => {
   const sendData = sendBuffer.map((v) => v.requestBody)
   try {
     logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
+    smartMonitor.recordDispatch(sendBuffer.length)
+    const requestAt = Date.now()
     const response = await axios.post(upstreamUrl, sendData)
+    const responseAt = Date.now()
+    const upstreamResponseTime = responseAt - requestAt
     const data = response.data
     logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
-    
-    for (let i=0; i<sendBuffer.length; i++) {
-      sendBuffer[i].res.send([data[i]])
+
+    // record dispatch results response time
+    smartMonitor.recordUpstreamResult(sendBuffer.length, upstreamResponseTime)
+
+    for (let i = 0; i < sendBuffer.length; i++) {
+      const req = sendBuffer[i].req
+      req.respHeader[headerPrefix + 'responseAt'] = responseAt
+      req.respHeader[headerPrefix + 'upstreamResponseTime'] = upstreamResponseTime
+      req.respHeader[headerPrefix + 'upstreamRequestCount'] = sendBuffer.length
+      req.respHeader[headerPrefix + 'responseTime'] = responseAt - req.receivedAt
+      req.respHeader[headerPrefix + 'queueTime'] = requestAt - req.receivedAt
+
+      // setting the headers and sending the results
+      sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
+
+      // record departure
+      smartMonitor.recordDeparture()
     }
   } catch (error) {
     logger.log('error', `[FETCH] error with upstream request: ${error}`)
 
     sendBuffer.forEach((v) => {
       v.res.status(500).send({
-        error
+        error: error.message
       })
     })
+
+    // record departure
+    smartMonitor.recordError()
+
+    throw error
   }
 
 }
