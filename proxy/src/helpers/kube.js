@@ -86,7 +86,6 @@ const getLiveKnativeDeploymentStatus = (service_name) => {
 }
 
 const listFn = () => appsV1Api.listDeploymentForAllNamespaces()
-// const path = '/api/v1/replicationcontrollers'
 
 const informer = k8s.makeInformer(kc, '/apis/apps/v1/deployments', listFn)
 informer.on('add', (obj) => {
