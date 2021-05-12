@@ -2,6 +2,7 @@
 
 // local imports
 const logger = require(__basedir + '/helpers/logger')
+const kube = require(__basedir + '/helpers/kube')
 
 // custom functions
 const arraySum = (arr) => arr.reduce((a, b) => a + b, 0)
@@ -75,6 +76,7 @@ class SmartMonitor {
       currentConcurrency: this.currentConcurrency,
       currentErrorCount: this.currentErrorCount,
       currentDispatchCount: this.currentDispatchCount,
+      currentReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.replicas,
     }
   }
   // returns the current state of the system, including estimated RPS and concurrency
@@ -88,6 +90,7 @@ class SmartMonitor {
       'currentConcurrency',
       'currentErrorCount',
       'currentDispatchCount',
+      'currentReplicaCount',
     ]
     const windowedHistoryValues = {}
     for (let k of windowKeys) {
@@ -143,7 +146,7 @@ class SmartMonitor {
   }
   periodInterval() {
     const currentMonitorStatus = this.getCurrentMonitorStatus()
-    logger.log('debug', this.loggerPrefix + ' ' + `${JSON.stringify(currentMonitorStatus)}`)
+    // logger.log('debug', this.loggerPrefix + ' ' + `${JSON.stringify(currentMonitorStatus)}`)
 
     for (let k in currentMonitorStatus) {
       // make it an array if it isn't already one
@@ -176,7 +179,7 @@ class SmartMonitor {
     this.historyResponseTimes = []
   }
   resetCounts() {
-    logger.log('info', this.loggerPrefix + ' ' + 'resetting current counts')
+    // logger.log('info', this.loggerPrefix + ' ' + 'resetting current counts')
     this.currentArrivalCount = 0
     this.currentErrorCount = 0
     this.currentDepartureCount = 0

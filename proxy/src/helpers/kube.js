@@ -3,6 +3,8 @@
 // source3: https://github.com/kubernetes-client/javascript/blob/master/examples/cache-example.js
 // source4: https://github.com/kubernetes-client/javascript/blob/master/examples/typescript/watch/watch-example.ts
 
+const logger = require(__basedir + '/helpers/logger')
+
 const k8s = require('@kubernetes/client-node')
 
 const kc = new k8s.KubeConfig()
@@ -76,7 +78,11 @@ const updateLiveDeployment = (deployment) => {
   // if version not older, update it
   liveKnativeDeployments[serviceName] = deployment
 
-  console.log(liveKnativeDeployments[serviceName])
+  logger.log('info', `[KUBE] Service: ${serviceName}, Replicas: ${liveKnativeDeployments[serviceName].replicas}`)
+}
+
+const getLiveKnativeDeploymentStatus = (service_name) => {
+  return liveKnativeDeployments[service_name]
 }
 
 const listFn = () => appsV1Api.listDeploymentForAllNamespaces()
@@ -114,3 +120,9 @@ informer.on('error', (err) => {
 });
 
 informer.start()
+
+
+module.exports = {
+  // getKnativeDeployments,
+  getLiveKnativeDeploymentStatus,
+}

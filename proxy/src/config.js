@@ -1,6 +1,7 @@
 const workloadConfigs = {
   'bentoml-iris': {
-    upstreamUrl: "http://localhost:5000/predict",
+    serviceName: 'bentoml-iris',
+    upstreamUrl: "http://bentoml-iris.default.kn.nima-dev.com/predict",
     maxBufferTimeoutMs: 1000,
     maxBufferSize: 3,
   },
