@@ -70,8 +70,8 @@ const getCustomDeploymentObject = (deployment) => {
 const updateLiveDeployment = (deployment) => {
   const serviceName = deployment.serviceName
   const versionNumber = deployment.versionNumber
-  // if a newer version exists, don't update
-  if (liveKnativeDeployments[serviceName] && liveKnativeDeployments[serviceName].versionNumber >= versionNumber) {
+  // if a newer version exists, don't update, but update if current version
+  if (liveKnativeDeployments[serviceName] && liveKnativeDeployments[serviceName].versionNumber > versionNumber) {
     return
   }
 
