@@ -121,7 +121,7 @@ class SmartMonitor {
     // average ratio of dispatches that were due to timeout
     windowedHistoryValues['timeoutRatio'] = {
       // average: windowedHistoryValues['timeouts'].average / windowedHistoryValues['dispatch'].average,
-      average: arraySum(this.historyStatus['currentTimeouts']) / arraySum(this.historyStatus['currentDispatchRequestCount']),
+      average: this.historyStatus['currentTimeouts'] ? arraySum(this.historyStatus['currentTimeouts']) / arraySum(this.historyStatus['currentDispatchRequestCount']) : null,
       rate: -1,
     }
 
@@ -158,12 +158,19 @@ class SmartMonitor {
     // return downstream response time stats
     const windowedResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
 
+    // get the latest stable status object
+    const lastMonitorStatus = {}
+    for (let k in this.historyStatus) {
+      lastMonitorStatus[k] = this.historyStatus[k][this.historyStatus[k].length - 1]
+    }
+
     return {
       // how many seconds in a monitoring window
       monitoringWindowLength: this.monitoringWindowLength,
       monitoringResponseTimeLength: this.monitoringResponseTimePeriodCount * this.monitoringPeriodInterval / 1000,
       monitoringPeriodInterval: this.monitoringPeriodInterval / 1000,
       currentMonitorStatus,
+      lastMonitorStatus,
       windowedHistoryValues,
       windowedUpstream: {
         responseTimes: windowedUpstreamResponseTime,
