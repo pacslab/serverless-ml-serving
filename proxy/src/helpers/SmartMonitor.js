@@ -54,6 +54,8 @@ class SmartMonitor {
   }
   setWorkloadConfig(workloadConfig) {
     this.workloadConfig = workloadConfig
+    // setting max buffer size to be reported
+    this.maxBufferSize = workloadConfig.maxBufferSize
     // we need super fast access to some workload config
     // this.monitoringPeriodInterval = workloadConfig.monitoringPeriodInterval
     // this.monitoringPeriodCount = workloadConfig.monitoringPeriodCount
@@ -76,6 +78,7 @@ class SmartMonitor {
       currentConcurrency: this.currentConcurrency,
       currentErrorCount: this.currentErrorCount,
       currentDispatchCount: this.currentDispatchCount,
+      currentMaxBufferSize: this.maxBufferSize,
       currentReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.replicas,
     }
   }
@@ -91,6 +94,7 @@ class SmartMonitor {
       'currentErrorCount',
       'currentDispatchCount',
       'currentReplicaCount',
+      'currentMaxBufferSize',
     ]
     const windowedHistoryValues = {}
     for (let k of windowKeys) {
@@ -130,6 +134,12 @@ class SmartMonitor {
 
     // get a list of unique batch sizes
     let windowedUpstreamResponseBatchSizes = asc(Object.keys(windowedUpstreamResponseTime).map(v => Number(v)))
+    let windowedUpstreamResponseBatchSizeCounts = Object.keys(windowedUpstreamResponseTime).map(v => {
+      return {
+        batchSize: Number(v),
+        count: windowedUpstreamResponseTime[v].stats.count,
+      }
+    })
 
     // return downstream response time stats
     const windowedResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
@@ -144,6 +154,7 @@ class SmartMonitor {
       windowedUpstream: {
         responseTimes: windowedUpstreamResponseTime,
         batchSizes: windowedUpstreamResponseBatchSizes,
+        batchSizeCounts: windowedUpstreamResponseBatchSizeCounts,
       },
       responseTimes: {
         values: windowedResponseTimesHistory,
