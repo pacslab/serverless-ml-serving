@@ -34,6 +34,7 @@ const getResponseTimeStats = (arr) => {
     q50,
     q95,
     mean,
+    count: arr.length,
   }
 }
 
@@ -115,7 +116,7 @@ class SmartMonitor {
       // empty array if not defined
       if (windowedUpstreamResponseTime[v[0]] === undefined) {
         windowedUpstreamResponseTime[v[0]] = {
-          'values': [],
+          values: [],
         }
       }
       windowedUpstreamResponseTime[v[0]]['values'].push(v[1])
