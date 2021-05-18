@@ -78,10 +78,11 @@ class SmartMonitor {
       currentConcurrency: this.currentConcurrency,
       currentErrorCount: this.currentErrorCount,
       currentDispatchCount: this.currentDispatchCount,
+      currentDispatchRequestCount: this.currentDispatchRequestCount,
       currentMaxBufferSize: this.maxBufferSize,
       currentTimeouts: this.currentTimeouts,
       // what ratio of dispatches were due to timeout
-      currentTimeoutRatio: (this.currentDispatchCount > 0) ? (this.currentTimeouts / this.currentDispatchCount) : null,
+      currentTimeoutRatio: (this.currentDispatchRequestCount > 0) ? (this.currentTimeouts / this.currentDispatchRequestCount) : null,
       currentReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.replicas,
     }
   }
@@ -119,7 +120,8 @@ class SmartMonitor {
 
     // average ratio of dispatches that were due to timeout
     windowedHistoryValues['timeoutRatio'] = {
-      average: windowedHistoryValues['timeouts'].average / windowedHistoryValues['dispatch'].average,
+      // average: windowedHistoryValues['timeouts'].average / windowedHistoryValues['dispatch'].average,
+      average: arraySum(this.historyStatus['currentTimeouts']) / arraySum(this.historyStatus['currentDispatchRequestCount']),
       rate: -1,
     }
 
@@ -223,6 +225,7 @@ class SmartMonitor {
     this.currentErrorCount = 0
     this.currentDepartureCount = 0
     this.currentDispatchCount = 0
+    this.currentDispatchRequestCount = 0
     this.currentTimeouts = 0
 
     // response time recording
@@ -244,6 +247,7 @@ class SmartMonitor {
   // record how many inferences have been dispatched
   recordDispatch(count) {
     this.currentDispatchCount += count
+    this.currentDispatchRequestCount ++
   }
   recordUpstreamResult(count, responseTime) {
     this.currentUpstreamResponseTimes.push([count, responseTime])
