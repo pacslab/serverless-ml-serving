@@ -33,7 +33,7 @@ const getResponseTimeStats = (arr) => {
   return {
     q50,
     q95,
-    mean,
+    average: mean,
     count: arr.length,
   }
 }
@@ -180,7 +180,7 @@ class SmartMonitor {
         },
       },
       responseTimes: {
-        values: windowedResponseTimesHistory,
+        // values: windowedResponseTimesHistory,
         stats: getResponseTimeStats(windowedResponseTimesHistory),
       }
     }
