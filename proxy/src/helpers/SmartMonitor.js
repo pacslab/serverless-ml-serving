@@ -13,7 +13,6 @@ const onlyUnique = (value, index, self) => self.indexOf(value) === index
 const arrayQuantile = (sorted, q) => {
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
-  console.log('base', base)
   const rest = pos - base;
   if (sorted[base + 1] !== undefined) {
     return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
@@ -65,7 +64,7 @@ class SmartMonitor {
     this.monitoringPeriodCount = 10
     // how many periods are considered for response time monitoring
     this.monitoringResponseTimePeriodCount = 30
-    
+
     // the number of seconds in the monitoring window in total
     this.monitoringWindowLength = this.monitoringPeriodInterval * this.monitoringPeriodCount / 1000
   }
@@ -109,7 +108,7 @@ class SmartMonitor {
       }
     }
 
-    const windowedUpstreamResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
+    const windowedUpstreamResponseTimesHistory = this.historyUpstreamResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
 
     const windowedUpstreamResponseTime = {}
     windowedUpstreamResponseTimesHistory.forEach((v) => {
@@ -121,7 +120,7 @@ class SmartMonitor {
       }
       windowedUpstreamResponseTime[v[0]]['values'].push(v[1])
     })
-    for(let k in windowedUpstreamResponseTime) {
+    for (let k in windowedUpstreamResponseTime) {
       const wrt = windowedUpstreamResponseTime[k]
       const values = wrt['values']
       const WRTStats = getResponseTimeStats(values)
@@ -130,6 +129,9 @@ class SmartMonitor {
 
     // get a list of unique batch sizes
     let windowedUpstreamResponseBatchSizes = asc(Object.keys(windowedUpstreamResponseTime).map(v => Number(v)))
+
+    // return downstream response time stats
+    const windowedResponseTimesHistory = this.historyResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
 
     return {
       // how many seconds in a monitoring window
@@ -141,6 +143,10 @@ class SmartMonitor {
       windowedUpstream: {
         responseTimes: windowedUpstreamResponseTime,
         batchSizes: windowedUpstreamResponseBatchSizes,
+      },
+      responseTimes: {
+        values: windowedResponseTimesHistory,
+        stats: getResponseTimeStats(windowedResponseTimesHistory),
       }
     }
   }
@@ -165,6 +171,12 @@ class SmartMonitor {
       // console.log(this.historyStatus[k])
     }
 
+    this.historyUpstreamResponseTimes.push(this.currentUpstreamResponseTimes)
+    if (this.historyUpstreamResponseTimes.length > this.monitoringResponseTimePeriodCount) {
+      // pop one from the other side of the array if array full
+      this.historyUpstreamResponseTimes.shift()
+    }
+
     this.historyResponseTimes.push(this.currentResponseTimes)
     if (this.historyResponseTimes.length > this.monitoringResponseTimePeriodCount) {
       // pop one from the other side of the array if array full
@@ -176,6 +188,7 @@ class SmartMonitor {
   }
   resetHistory() {
     this.historyStatus = {}
+    this.historyUpstreamResponseTimes = []
     this.historyResponseTimes = []
   }
   resetCounts() {
@@ -186,6 +199,7 @@ class SmartMonitor {
     this.currentDispatchCount = 0
 
     // response time recording
+    this.currentUpstreamResponseTimes = []
     this.currentResponseTimes = []
   }
   recordArrival() {
@@ -205,7 +219,10 @@ class SmartMonitor {
     this.currentDispatchCount += count
   }
   recordUpstreamResult(count, responseTime) {
-    this.currentResponseTimes.push([count, responseTime])
+    this.currentUpstreamResponseTimes.push([count, responseTime])
+  }
+  recordRresponseTime(responseTime) {
+    this.currentResponseTimes.push(responseTime)
   }
 }
 

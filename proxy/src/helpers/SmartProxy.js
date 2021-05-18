@@ -145,11 +145,13 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor)
 
     for (let i = 0; i < sendBuffer.length; i++) {
       const req = sendBuffer[i].req
+      const responseTime = responseAt - req.receivedAt
       req.respHeader[headerPrefix + 'responseAt'] = responseAt
       req.respHeader[headerPrefix + 'upstreamResponseTime'] = upstreamResponseTime
       req.respHeader[headerPrefix + 'upstreamRequestCount'] = sendBuffer.length
-      req.respHeader[headerPrefix + 'responseTime'] = responseAt - req.receivedAt
+      req.respHeader[headerPrefix + 'responseTime'] = responseTime
       req.respHeader[headerPrefix + 'queueTime'] = requestAt - req.receivedAt
+      smartMonitor.recordRresponseTime(responseTime)
 
       // setting the headers and sending the results
       sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
