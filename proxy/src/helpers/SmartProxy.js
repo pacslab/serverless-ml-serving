@@ -95,7 +95,7 @@ class SmartProxy {
     // send a request if queue is full, then schedule for next one
     if (queueLength >= this.maxBufferSize) {
       this.log('queue full, *** dispatching ***')
-      this.dispatch()
+      this.dispatch(false)
       // function will automatically be called by dispatch
       return
     }
@@ -106,11 +106,12 @@ class SmartProxy {
     this.log(`Next scheduled timeout: ${nextTimeoutDelay}`)
     this.nextTimeout = setTimeout(() => {
       this.log('queue timeout, *** dispatching ***')
-      this.dispatch()
+      this.dispatch(true)
     }, nextTimeoutDelay)
   }
   // dispatch up to maximum buffer size requests
-  dispatch() {
+  dispatch(timeout) {
+    this.smartMonitor.recordSchedule(timeout)
     const queueLength = this.getQueueLength()
     const dispatchLength = Math.min(queueLength, this.maxBufferSize)
 

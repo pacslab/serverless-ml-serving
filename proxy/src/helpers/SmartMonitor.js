@@ -79,6 +79,9 @@ class SmartMonitor {
       currentErrorCount: this.currentErrorCount,
       currentDispatchCount: this.currentDispatchCount,
       currentMaxBufferSize: this.maxBufferSize,
+      currentTimeouts: this.currentTimeouts,
+      // what ratio of dispatches were due to timeout
+      currentTimeoutRatio: (this.currentDispatchCount > 0) ? (this.currentTimeouts / this.currentDispatchCount) : null,
       currentReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.replicas,
     }
   }
@@ -95,6 +98,7 @@ class SmartMonitor {
       'currentDispatchCount',
       'currentReplicaCount',
       'currentMaxBufferSize',
+      'currentTimeouts',
     ]
     const windowedHistoryValues = {}
     for (let k of windowKeys) {
@@ -106,11 +110,17 @@ class SmartMonitor {
       // refine arrays to avoid undefined
       historyCounts = (historyCounts) ? historyCounts : []
       // calculate rates
-      const currentWindowLength = historyCounts.length ? historyCounts.length : 1
+      let currentWindowLength = (historyCounts.length > 0) ? historyCounts.length : 1
       windowedHistoryValues[newK] = {
         average: arraySum(historyCounts) / currentWindowLength,
         rate: arraySum(historyCounts) / currentWindowLength / (this.monitoringPeriodInterval / 1000),
       }
+    }
+
+    // average ratio of dispatches that were due to timeout
+    windowedHistoryValues['timeoutRatio'] = {
+      average: windowedHistoryValues['timeouts'].average / windowedHistoryValues['dispatch'].average,
+      rate: -1,
     }
 
     const windowedUpstreamResponseTimesHistory = this.historyUpstreamResponseTimes.reduce((acc, curr) => acc.concat(curr), [])
@@ -209,6 +219,7 @@ class SmartMonitor {
     this.currentErrorCount = 0
     this.currentDepartureCount = 0
     this.currentDispatchCount = 0
+    this.currentTimeouts = 0
 
     // response time recording
     this.currentUpstreamResponseTimes = []
@@ -232,6 +243,11 @@ class SmartMonitor {
   }
   recordUpstreamResult(count, responseTime) {
     this.currentUpstreamResponseTimes.push([count, responseTime])
+  }
+  recordSchedule(timeout) {
+    if (timeout) {
+      this.currentTimeouts++
+    }
   }
   recordRresponseTime(responseTime) {
     this.currentResponseTimes.push(responseTime)
