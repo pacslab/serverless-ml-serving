@@ -140,15 +140,17 @@ class SmartMonitor {
       const values = wrt['values']
       const WRTStats = getResponseTimeStats(values)
       wrt['stats'] = WRTStats
+      wrt['batchSize'] = Number(k)
     }
 
     // get a list of unique batch sizes
     let windowedUpstreamResponseBatchSizes = asc(Object.keys(windowedUpstreamResponseTime).map(v => Number(v)))
-    let windowedUpstreamResponseBatchSizeCounts = Object.keys(windowedUpstreamResponseTime).map(v => {
-      return {
-        batchSize: Number(v),
-        count: windowedUpstreamResponseTime[v].stats.count,
-      }
+    // used in calculating average
+    let batchSizeSum = 0;
+    let batchSizeCount = 0;
+    Object.keys(windowedUpstreamResponseTime).forEach(v => {
+      batchSizeSum += (Number(v) * windowedUpstreamResponseTime[v].stats.count)
+      batchSizeCount += windowedUpstreamResponseTime[v].stats.count
     })
 
     // return downstream response time stats
@@ -163,8 +165,10 @@ class SmartMonitor {
       windowedHistoryValues,
       windowedUpstream: {
         responseTimes: windowedUpstreamResponseTime,
-        batchSizes: windowedUpstreamResponseBatchSizes,
-        batchSizeCounts: windowedUpstreamResponseBatchSizeCounts,
+        batchSizes: {
+          values: windowedUpstreamResponseBatchSizes,
+          average: batchSizeSum / batchSizeCount,
+        },
       },
       responseTimes: {
         values: windowedResponseTimesHistory,
