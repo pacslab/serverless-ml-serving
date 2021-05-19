@@ -4,6 +4,7 @@ import json
 import random
 import traceback
 import io
+import time
 
 from tqdm.auto import tqdm
 import tensorflow as tf
@@ -218,3 +219,6 @@ if __name__ == "__main__":
             except Exception:
                 print('exception occured:')
                 traceback.print_exc()
+
+        print('waiting for resources to release')
+        time.sleep(30)
