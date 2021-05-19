@@ -169,6 +169,7 @@ class SmartMonitor {
       monitoringWindowLength: this.monitoringWindowLength,
       monitoringResponseTimeLength: this.monitoringResponseTimePeriodCount * this.monitoringPeriodInterval / 1000,
       monitoringPeriodInterval: this.monitoringPeriodInterval / 1000,
+      maxBufferSize: this.maxBufferSize,
       currentMonitorStatus,
       lastMonitorStatus,
       windowedHistoryValues,

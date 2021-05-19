@@ -48,6 +48,26 @@ router.post('/proxy/:serviceName', (req, res) => {
   }
 })
 
+router.post('/proxy-config/:serviceName', (req, res) => {
+  const serviceName = req.params.serviceName
+  const serviceProxy = serviceSmartProxies[serviceName]
+
+  if (serviceProxy) {
+    logger.log('info', `[PROXY-CONFIG] configuring for service ${serviceName}`)
+    const newConfig = {
+      ...serviceProxy.workloadConfig,
+      ...req.body
+    }
+    serviceProxy.setWorkloadConfig(newConfig)
+    res.status(200).send(serviceProxy.workloadConfig)
+  } else {
+    logger.log('info', `[PROXY-CONFIG] service not found: ${serviceName}`)
+    res.status(404).send({
+      error: `service ${serviceName} not found!`
+    })
+  }
+})
+
 router.get('/proxy-monitor/:serviceName', (req, res) => {
   const serviceName = req.params.serviceName
   const serviceProxy = serviceSmartProxies[serviceName]
