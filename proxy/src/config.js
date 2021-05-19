@@ -4,6 +4,14 @@ const workloadConfigs = {
     upstreamUrl: "http://bentoml-iris.default.kn.nima-dev.com/predict",
     maxBufferTimeoutMs: 1000,
     maxBufferSize: 3,
+    isTFServing: false,
+  },
+  'tfserving-resnetv2': {
+    serviceName: 'bentoml-iris',
+    upstreamUrl: "http://tfserving-resnetv2.default.kn.nima-dev.com/v1/models/resnet:predict",
+    maxBufferTimeoutMs: 1000,
+    maxBufferSize: 3,
+    isTFServing: true,
   },
 }
 

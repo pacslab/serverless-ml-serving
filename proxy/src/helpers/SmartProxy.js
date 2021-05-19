@@ -30,6 +30,7 @@ class SmartProxy {
     this.upstreamUrl = workloadConfig.upstreamUrl
     this.maxBufferTimeoutMs = workloadConfig.maxBufferTimeoutMs
     this.maxBufferSize = workloadConfig.maxBufferSize
+    this.isTFServing = workloadConfig.isTFServing
   }
   logReq(message, req) {
     logger.log(this.logLevel, this.loggerPrefix + ' ' + `${message} (request-id ${req.id})`)
@@ -42,7 +43,10 @@ class SmartProxy {
     this.smartMonitor.recordArrival()
 
     // extract request body from the req object
-    const requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
+    let requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
+    if (this.isTFServing) {
+      requestBody = requestBody.instances[0]
+    }
 
     // create queue object
     const queueObject = {
@@ -116,21 +120,28 @@ class SmartProxy {
     const dispatchLength = Math.min(queueLength, this.maxBufferSize)
 
     // pop requests from the buffer and update the buffer
-    const sendBuffer = this.requestBuffer.splice(0, dispatchLength)
+    let sendBuffer = this.requestBuffer.splice(0, dispatchLength)
 
     const sendBufferIds = sendBuffer.map((v) => v.req.id).join(',')
     this.log(`dispatching ids: ${sendBufferIds}`)
 
     // send the request and respond to the requests
-    sendBufferRequest(this.upstreamUrl, sendBuffer, (m) => this.log(m), this.smartMonitor)
+    sendBufferRequest(this.upstreamUrl, sendBuffer, this.isTFServing, (m) => this.log(m), this.smartMonitor)
 
     // reschedule next timeout
     this.scheduleNextTimeout()
   }
 }
 
-const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor) => {
-  const sendData = sendBuffer.map((v) => v.requestBody)
+const sendBufferRequest = async (upstreamUrl, sendBuffer, isTFServing, logFunc, smartMonitor) => {
+  let sendData = sendBuffer.map((v) => v.requestBody)
+  // shape the correct request to be sent
+  if (isTFServing) {
+    sendData = {
+      instances: sendData,
+    }
+  }
+
   try {
     logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
     smartMonitor.recordDispatch(sendBuffer.length)
@@ -138,7 +149,12 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor)
     const response = await axios.post(upstreamUrl, sendData)
     const responseAt = Date.now()
     const upstreamResponseTime = responseAt - requestAt
-    const data = response.data
+    let data;
+    if (isTFServing) {
+      data = response.data.predictions
+    } else {
+      data = response.data
+    }
     logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
 
     // record dispatch results response time
@@ -155,7 +171,13 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, logFunc, smartMonitor)
       smartMonitor.recordRresponseTime(responseTime)
 
       // setting the headers and sending the results
-      sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send([data[i]])
+      let response = [data[i]]
+      if (isTFServing) {
+        response = {
+          predictions: [data[i]],
+        }
+      }
+      sendBuffer[i].res.set(sendBuffer[i].req.respHeader).send(response)
 
       // record departure
       smartMonitor.recordDeparture()
