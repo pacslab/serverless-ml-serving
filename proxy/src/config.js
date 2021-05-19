@@ -7,11 +7,18 @@ const workloadConfigs = {
     isTFServing: false,
   },
   'tfserving-resnetv2': {
-    serviceName: 'bentoml-iris',
+    serviceName: 'tfserving-resnetv2',
     upstreamUrl: "http://tfserving-resnetv2.default.kn.nima-dev.com/v1/models/resnet:predict",
     maxBufferTimeoutMs: 1000,
     maxBufferSize: 3,
     isTFServing: true,
+  },
+  'bentoml-onnx-resnet50': {
+    serviceName: 'bentoml-onnx-resnet50',
+    upstreamUrl: "http://bentoml-onnx-resnet50.default.kn.nima-dev.com/predict",
+    maxBufferTimeoutMs: 1000,
+    maxBufferSize: 3,
+    isTFServing: false,
   },
 }
 

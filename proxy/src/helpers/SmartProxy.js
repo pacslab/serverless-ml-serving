@@ -46,6 +46,10 @@ class SmartProxy {
     let requestBody = Array.isArray(req.body[0]) ? req.body[0] : req.body
     if (this.isTFServing) {
       requestBody = requestBody.instances[0]
+    } else {
+      if (Array.isArray(requestBody)) {
+        requestBody = ((typeof(requestBody[0]) === 'number') ? requestBody : requestBody[0])
+      }
     }
 
     // create queue object
