@@ -42,6 +42,7 @@ def request_bentoml_iris(batch_size=1, url=None):
     return {
         'prediction': response.json(),
         'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
     }
 
 
@@ -130,6 +131,7 @@ def request_bentoml_onnx_resnet50(batch_size=1, url=None):
     return {
         'prediction': response.json(),
         'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
     }
 
 
@@ -168,6 +170,7 @@ def request_tfserving_resnetv2(batch_size=1, url=None):
     return {
         'prediction': resp_predictions,
         'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
     }
 
 
@@ -195,6 +198,7 @@ def request_tfserving_mobilenetv1(batch_size=1, url=None):
     return {
         'prediction': resp_predictions,
         'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
     }
 
 
