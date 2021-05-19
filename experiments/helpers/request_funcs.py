@@ -31,11 +31,12 @@ iris_featurs = [list(d['features'].numpy().tolist()) for d in ds_iris]
 
 
 # Iris on BentoML
-def request_bentoml_iris(batch_size=1):
+def request_bentoml_iris(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_BENTOML_IRIS_NAME]
+
     predict_request = random.choices(iris_featurs, k=batch_size)
-    response = requests.post(
-        default_server_urls[WORKLOAD_BENTOML_IRIS_NAME], json=predict_request
-    )
+    response = requests.post(url, json=predict_request)
     response.raise_for_status()
     return {
         'prediction': response.json(),
@@ -118,9 +119,12 @@ ds_imagenet_images_bentoml_files = [{
 #     }
 
 # bentoml onnx resnet50 workload with base64 decoding
-def request_bentoml_onnx_resnet50(batch_size=1):
+def request_bentoml_onnx_resnet50(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50]
+
     predict_request = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
-    response = requests.post(default_server_urls[WORKLOAD_BENTOML_ONNX_RESNET50], json=predict_request)
+    response = requests.post(url, json=predict_request)
     response.raise_for_status()
     return {
         'prediction': response.json(),
@@ -140,13 +144,16 @@ ds_imagenet_images_tfserving_b64 = [
 
 
 # tfserving resnet v2 workload
-def request_tfserving_resnetv2(batch_size=1):
+def request_tfserving_resnetv2(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_TFSERVING_RESNETV2]
+
     files = random.choices(ds_imagenet_images_tfserving_b64, k=batch_size)
     predict_request = {
         "instances": files,
     }
 
-    response = requests.post(default_server_urls[WORKLOAD_TFSERVING_RESNETV2], json=predict_request)
+    response = requests.post(url, json=predict_request)
     response.raise_for_status()
 
     resp_predictions = []
@@ -166,10 +173,13 @@ def request_tfserving_resnetv2(batch_size=1):
 print('preprocessing for mobilenet')
 ds_imagenet_images_tfserving_mobilenet = [preprocess_mobilenet(image_np) for image_np in tqdm(ds_imagenet_images)]
 
-def request_tfserving_mobilenetv1(batch_size=1):
+def request_tfserving_mobilenetv1(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_TFSERVING_MOBILENETV1]
+
     predict_files = random.choices(ds_imagenet_images_tfserving_mobilenet, k=batch_size)
     predict_request = {"instances" : predict_files}
-    response = requests.post(default_server_urls[WORKLOAD_TFSERVING_MOBILENETV1], json=predict_request)
+    response = requests.post(url, json=predict_request)
     response.raise_for_status()
 
     resp_predictions = []
