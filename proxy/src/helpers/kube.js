@@ -52,6 +52,8 @@ const getCustomDeploymentObject = (deployment) => {
     versionNumber = Number(versionNumber)
     let replicas = deployment.status.replicas
     replicas = replicas ? replicas : 0
+    let readyReplicas = deployment.status.readyReplicas
+    readyReplicas = readyReplicas ? readyReplicas : 0
     return {
       name,
       serviceName,
@@ -59,6 +61,7 @@ const getCustomDeploymentObject = (deployment) => {
       status: deployment.status.conditions[0].status,
       image: deployment.spec.template.spec.containers[0].image,
       replicas,
+      readyReplicas,
       ports: [],
       services: []
     }
@@ -78,7 +81,7 @@ const updateLiveDeployment = (deployment) => {
   // if version not older, update it
   liveKnativeDeployments[serviceName] = deployment
 
-  logger.log('info', `[KUBE] Service: ${serviceName}, Replicas: ${liveKnativeDeployments[serviceName].replicas}`)
+  logger.log('info', `[KUBE] Service: ${serviceName}, Replicas: ${liveKnativeDeployments[serviceName].replicas}, Ready: ${liveKnativeDeployments[serviceName].readyReplicas}`)
 }
 
 const getLiveKnativeDeploymentStatus = (service_name) => {
