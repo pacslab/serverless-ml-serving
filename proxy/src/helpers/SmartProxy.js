@@ -130,14 +130,15 @@ class SmartProxy {
     this.log(`dispatching ids: ${sendBufferIds}`)
 
     // send the request and respond to the requests
-    sendBufferRequest(this.upstreamUrl, sendBuffer, this.isTFServing, (m) => this.log(m), this.smartMonitor)
+    sendBufferRequest(this.upstreamUrl, sendBuffer, this, (m) => this.log(m), this.smartMonitor)
 
     // reschedule next timeout
     this.scheduleNextTimeout()
   }
 }
 
-const sendBufferRequest = async (upstreamUrl, sendBuffer, isTFServing, logFunc, smartMonitor) => {
+const sendBufferRequest = async (upstreamUrl, sendBuffer, smartProxy, logFunc, smartMonitor) => {
+  const isTFServing = smartProxy.isTFServing
   let sendData = sendBuffer.map((v) => v.requestBody)
   // shape the correct request to be sent
   if (isTFServing) {
@@ -147,7 +148,8 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, isTFServing, logFunc, 
   }
 
   try {
-    logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
+    // logFunc(`[FETCH] Sending request ${JSON.stringify(sendData)}`)
+    logFunc(`[FETCH] Sending request to service ${smartProxy.workloadConfig.serviceName}`)
     smartMonitor.recordDispatch(sendBuffer.length)
     const requestAt = Date.now()
     const response = await axios.post(upstreamUrl, sendData)
@@ -159,7 +161,8 @@ const sendBufferRequest = async (upstreamUrl, sendBuffer, isTFServing, logFunc, 
     } else {
       data = response.data
     }
-    logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
+    // logFunc(`[FETCH] Received response ${JSON.stringify(data)}`)
+    logFunc(`[FETCH] Received response from service ${smartProxy.workloadConfig.serviceName}`)
 
     // record dispatch results response time
     smartMonitor.recordUpstreamResult(sendBuffer.length, upstreamResponseTime)

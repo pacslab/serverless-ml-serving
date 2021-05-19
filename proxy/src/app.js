@@ -27,9 +27,9 @@ app.io = io
 global.app = app
 
 // Parse incoming json
-app.use(express.json())
+app.use(express.json({ limit: '50mb' }))
 // Parse form data
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 // CORS
 const cors = require('cors')
 app.use(cors())

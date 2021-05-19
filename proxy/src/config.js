@@ -22,6 +22,13 @@ const workloadConfigs = {
     maxBufferSize: 3,
     isTFServing: false,
   },
+  'tfserving-mobilenetv1': {
+    serviceName: 'tfserving-mobilenetv1',
+    upstreamUrl: `http://tfserving-mobilenetv1.default.${KN_DOMAIN}/v1/models/mobilenet:predict`,
+    maxBufferTimeoutMs: 1000,
+    maxBufferSize: 3,
+    isTFServing: true,
+  },
 }
 
 module.exports = {
