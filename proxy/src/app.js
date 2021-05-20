@@ -15,9 +15,11 @@ const addRequestId = require('express-request-id')()
 const config = require(__basedir + '/config')
 const {
   PORT: port,
+  KN_DOMAIN,
 } = config
 
 logger.info(`starting application on port ${port}`)
+logger.log('info', `[CONFIG] Knative Domain: ${KN_DOMAIN}`)
 
 // preparing express app
 const app = express()
