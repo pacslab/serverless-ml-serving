@@ -9,3 +9,12 @@ jupyter nbconvert --to notebook --inplace --execute experiment.ipynb
 # list of kernels:
 #   jupyter kernelspec list
 ```
+
+To terminate pods that are stuck in `Terminating` state:
+
+```sh
+# command:
+for p in $(kubectl get pods | grep Terminating | awk '{print $1}'); do kubectl delete pod $p --grace-period=0 --force;done
+# or add the following to `crontab -e` to run every minute
+* * * * * for p in $(kubectl get pods | grep Terminating | awk '{print $1}'); do kubectl delete pod $p --grace-period=0 --force;done
+```
