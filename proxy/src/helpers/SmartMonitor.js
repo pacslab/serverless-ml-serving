@@ -56,6 +56,7 @@ class SmartMonitor {
     this.workloadConfig = workloadConfig
     // setting max buffer size to be reported
     this.maxBufferSize = workloadConfig.maxBufferSize
+    this.maxBufferTimeoutMs = workloadConfig.maxBufferTimeoutMs
     // we need super fast access to some workload config
     // this.monitoringPeriodInterval = workloadConfig.monitoringPeriodInterval
     // this.monitoringPeriodCount = workloadConfig.monitoringPeriodCount
@@ -84,6 +85,7 @@ class SmartMonitor {
       // what ratio of dispatches were due to timeout
       currentTimeoutRatio: (this.currentDispatchRequestCount > 0) ? (this.currentTimeouts / this.currentDispatchRequestCount) : null,
       currentReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.replicas,
+      currentReadyReplicaCount: kube.getLiveKnativeDeploymentStatus(this.workloadConfig.serviceName)?.readyReplicas,
     }
   }
   // returns the current state of the system, including estimated RPS and concurrency
@@ -98,6 +100,7 @@ class SmartMonitor {
       'currentErrorCount',
       'currentDispatchCount',
       'currentReplicaCount',
+      'currentReadyReplicaCount',
       'currentMaxBufferSize',
       'currentTimeouts',
     ]
@@ -170,6 +173,7 @@ class SmartMonitor {
       monitoringResponseTimeLength: this.monitoringResponseTimePeriodCount * this.monitoringPeriodInterval / 1000,
       monitoringPeriodInterval: this.monitoringPeriodInterval / 1000,
       maxBufferSize: this.maxBufferSize,
+      maxBufferTimeoutMs: this.maxBufferTimeoutMs,
       currentMonitorStatus,
       lastMonitorStatus,
       windowedHistoryValues,
