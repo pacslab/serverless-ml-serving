@@ -1,4 +1,6 @@
 const axios = require('axios')
+// for doing momization of stats
+const memoize = require("memoizee")
 
 // local imports
 const logger = require(__basedir + '/helpers/logger')
@@ -14,6 +16,8 @@ class SmartProxy {
   constructor(workloadConfig, smartMonitor) {
     // smart monitor object
     this.smartMonitor = smartMonitor
+
+    this.quickMonitorStatus = memoize(() => smartMonitor.getMonitorStatus(), { length: false, maxAge: 10 * 1000 })
 
     // setting workload config
     this.setWorkloadConfig(workloadConfig)
@@ -48,7 +52,7 @@ class SmartProxy {
       requestBody = requestBody.instances[0]
     } else {
       if (Array.isArray(requestBody)) {
-        requestBody = ((typeof(requestBody[0]) === 'number') ? requestBody : requestBody[0])
+        requestBody = ((typeof (requestBody[0]) === 'number') ? requestBody : requestBody[0])
       }
     }
 
@@ -86,6 +90,26 @@ class SmartProxy {
       return this.requestBuffer[0].req.receivedAt
     }
   }
+  findP95Timeout() {
+    const monitorStatus = this.quickMonitorStatus()
+    const batch_values = monitorStatus['windowedUpstream']['batchSizes']['values']
+
+    if (batch_values.length > 0) {
+      const max_batch_size = Math.max(...batch_values)
+      const next_batch_size = this.requestBuffer.length + 1
+      
+
+      // if we have information about this batch size
+      if(monitorStatus['windowedUpstream']['batchSizes']['values'].indexOf(next_batch_size) > -1) {
+        return monitorStatus['windowedUpstream']['responseTimes'][next_batch_size]['stats']['q95']
+      } else {
+        return monitorStatus['windowedUpstream']['responseTimes'][max_batch_size]['stats']['q95']
+      }
+    }
+
+    return 100
+  }
+  estimateNextRequest
   scheduleNextTimeout() {
     // clear previously scheduled before it happens
     if (this.nextTimeout != -1) {
@@ -99,6 +123,13 @@ class SmartProxy {
       return
     }
 
+    let estimatedRequestTime = this.findP95Timeout()
+    // consider at least 50ms
+    estimatedRequestTime = Math.max(estimatedRequestTime, 50)
+    let estimatedMaxTimeout = this.maxBufferTimeoutMs - estimatedRequestTime
+    // queue timeout should at least be 50ms
+    estimatedMaxTimeout = Math.max(estimatedMaxTimeout, 50)
+
     const queueLength = this.getQueueLength()
     // send a request if queue is full, then schedule for next one
     if (queueLength >= this.maxBufferSize) {
@@ -110,7 +141,7 @@ class SmartProxy {
 
     const elapsedTimeSinceFirst = Date.now() - this.getFirstRequestReceivedTime()
     // TODO: update buffer timeout based on workload
-    const nextTimeoutDelay = Math.max(this.maxBufferTimeoutMs - elapsedTimeSinceFirst, 0)
+    const nextTimeoutDelay = Math.max(estimatedMaxTimeout - elapsedTimeSinceFirst, 0)
     this.log(`Next scheduled timeout: ${nextTimeoutDelay}`)
     this.nextTimeout = setTimeout(() => {
       this.log('queue timeout, *** dispatching ***')
