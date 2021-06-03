@@ -18,3 +18,10 @@ for p in $(kubectl get pods | grep Terminating | awk '{print $1}'); do kubectl d
 # or add the following to `crontab -e` to run every minute
 * * * * * for p in $(kubectl get pods | grep Terminating | awk '{print $1}'); do kubectl delete pod $p --grace-period=0 --force;done
 ```
+
+To set the server timezone:
+
+```sh
+sudo timedatectl set-timezone America/Toronto
+# to get a list of timezones: timedatectl list-timezones
+```
