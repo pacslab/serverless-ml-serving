@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import pytz
 from collections import deque
+from threading import Thread
 
 # library imports
 import requests
@@ -15,10 +16,12 @@ import matplotlib.pyplot as plt
 
 # set logging
 import logging
-logging.basicConfig(filename='controller.log', 
+logging.basicConfig(
+    filename='controller.log', 
     filemode='w', level=logging.DEBUG, 
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-    datefmt='%m/%d/%Y %I:%M:%S %p')
+    datefmt='%m/%d/%Y %I:%M:%S %p'
+)
 
 # config
 my_timezone = os.getenv('PY_TZ', 'America/Toronto')
@@ -72,8 +75,36 @@ class SmartProxyController:
 
         # empty stuff
         self.batch_rt_values = {}
+        self.control_thread = None
+        self.stop_control_thread_signal = False
 
         self.set_initial_config()
+
+    def control_loop(self):
+        while self.stop_control_thread_signal == False:
+            logging.debug('running control loop')
+            time.sleep(2)
+
+        logging.info('stopping control thread')
+
+    def stop_control_thread(self):
+        while self.control_thread.is_alive():
+            self.stop_control_thread_signal = True
+            time.sleep(1)
+        logging.info('Control thread stopped successfully')
+
+    def start_control_thread(self):
+        if self.control_thread is None or not(self.control_thread.is_alive()):
+            # create the thread
+            logging.info('starting control thread...')
+            self.stop_control_thread_signal = False
+            self.control_thread = Thread(target=self.control_loop, args=(), daemon=True)
+            self.control_thread.start()
+            # wait for initial results to appear before returning to do something else
+            time.sleep(1)
+        else:
+            # thread already exists
+            logging.info('control thread already started')
 
     def set_initial_config(self):
         logging.info(f'Initializing Config, BS={self.initial_batch_size}')
