@@ -37,7 +37,7 @@ router.post('/proxy/:serviceName', (req, res) => {
   req.receivedAt = Date.now()
 
   if (serviceProxy) {
-    logger.log('info', `[PROXY] received request for service ${serviceName}`)
+    logger.debug('info', `[PROXY] received request for service ${serviceName}`)
     serviceProxy.proxy(req, res)
     // res.status(200).send({msg: 'done!'})
   } else {
