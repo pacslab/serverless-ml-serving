@@ -68,6 +68,7 @@ class SmartProxyController:
         self.upstream_rt_max_len = kwargs.get('upstream_rt_max_len', 1000)
         # calculated default parameters
         self.slo_target = kwargs.get('slo_target', slo_timeout * 0.8)
+        self.disable_controller_signal = kwargs.get('disable_controller_signal', False)
 
         # necessary parameters
         self.service_name = service_name
@@ -82,6 +83,14 @@ class SmartProxyController:
 
         self.set_initial_config()
 
+    def disable_controller(self):
+        print('Controller Disabled!!!')
+        self.disable_controller_signal = True
+
+    def enable_controller(self):
+        print('Controller Enabled!!!')
+        self.disable_controller_signal = False
+
     def control_loop(self):
         while self.stop_control_thread_signal == False:
             logging.debug('running control loop')
@@ -90,6 +99,11 @@ class SmartProxyController:
             proxy_stats = self.get_proxy_stats()
             self.update_batch_rt_values(proxy_stats=proxy_stats)
             self.acc_proxy_stats.append(proxy_stats)
+
+            # don't continue if disabled
+            if self.disable_controller_signal:
+                time.sleep(30)
+                continue
 
             shouldIncrease = True
             if proxy_stats['reponseTimeP95'] is not None:
@@ -159,7 +173,7 @@ class SmartProxyController:
             'averageActualBatchSize': raw_stats['windowedUpstream']['batchSizes']['average'],
             'maxBufferTimeoutMs': raw_stats['maxBufferTimeoutMs'],
             'currentReplicaCount': raw_stats['currentMonitorStatus']['currentReplicaCount'],
-            'currentReadyReplicaCount': raw_stats['currentMonitorStatus']['currentReplicaCount'],
+            'currentReadyReplicaCount': raw_stats['currentMonitorStatus']['currentReadyReplicaCount'],
             'currentConcurrency': raw_stats['currentMonitorStatus']['currentConcurrency'],
             'averageConcurrency': raw_stats['windowedHistoryValues']['concurrency']['average'],
             'averageArrivalRate': raw_stats['windowedHistoryValues']['arrival']['rate'],
