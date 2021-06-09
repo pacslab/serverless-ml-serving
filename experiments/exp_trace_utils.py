@@ -30,6 +30,8 @@ my_timezone = os.getenv('PY_TZ', 'America/Toronto')
 def get_time_with_tz():
     return datetime.now().astimezone(pytz.timezone(my_timezone))
 
+from_js_timestamp = lambda x: datetime.utcfromtimestamp(x/1000).astimezone(pytz.timezone(my_timezone))
+
 class SmartProxyController:
     @staticmethod
     def calculate_new_bs(curr_bs, inc=True, config=None):
@@ -90,12 +92,14 @@ class SmartProxyController:
             self.acc_proxy_stats.append(proxy_stats)
 
             shouldIncrease = True
-            if proxy_stats['reponseTimeP95'] >= self.slo_target:
-                logging.info(f"reponseTimeP95 ({proxy_stats['reponseTimeP95']}) >= slo_target ({self.slo_target})")
-                shouldIncrease = False
-            if proxy_stats['averageTimeoutRatio'] >= self.average_timeout_ratio_threshold:
-                logging.info(f"averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) >= average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
-                shouldIncrease = False
+            if proxy_stats['reponseTimeP95'] is not None:
+                if proxy_stats['reponseTimeP95'] >= self.slo_target:
+                    logging.info(f"reponseTimeP95 ({proxy_stats['reponseTimeP95']}) >= slo_target ({self.slo_target})")
+                    shouldIncrease = False
+            if proxy_stats['averageTimeoutRatio'] is not None:
+                if proxy_stats['averageTimeoutRatio'] >= self.average_timeout_ratio_threshold:
+                    logging.info(f"averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) >= average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
+                    shouldIncrease = False
 
             new_bs = SmartProxyController.calculate_new_bs(self.curr_bs, shouldIncrease, self.bs_config)
             self.set_proxy_config({
