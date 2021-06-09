@@ -83,7 +83,29 @@ class SmartProxyController:
     def control_loop(self):
         while self.stop_control_thread_signal == False:
             logging.debug('running control loop')
-            time.sleep(2)
+
+            # get and save proxy stats
+            proxy_stats = self.get_proxy_stats()
+            self.update_batch_rt_values(proxy_stats=proxy_stats)
+            self.acc_proxy_stats.append(proxy_stats)
+
+            shouldIncrease = True
+            if proxy_stats['reponseTimeP95'] >= self.slo_target:
+                logging.info(f"reponseTimeP95 ({proxy_stats['reponseTimeP95']}) >= slo_target ({self.slo_target})")
+                shouldIncrease = False
+            if proxy_stats['averageTimeoutRatio'] >= self.average_timeout_ratio_threshold:
+                logging.info(f"averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) >= average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
+                shouldIncrease = False
+
+            new_bs = SmartProxyController.calculate_new_bs(self.curr_bs, shouldIncrease, self.bs_config)
+            self.set_proxy_config({
+                'maxBufferSize': new_bs,
+                'maxBufferTimeoutMs': self.slo_target,
+            })
+            logging.info(f"Changing BS from {self.curr_bs} to {new_bs}")
+            self.curr_bs = new_bs
+
+            time.sleep(30)
 
         logging.info('stopping control thread')
 
@@ -109,6 +131,8 @@ class SmartProxyController:
     def set_initial_config(self):
         logging.info(f'Initializing Config, BS={self.initial_batch_size}')
         self.curr_bs = self.initial_batch_size
+        # accumulated proxy stats
+        self.acc_proxy_stats = []
         return self.set_proxy_config({
             'maxBufferSize': self.initial_batch_size,
             'maxBufferTimeoutMs': self.slo_target,
