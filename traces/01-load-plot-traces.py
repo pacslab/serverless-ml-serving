@@ -30,3 +30,4 @@ for trace_fname in autoscale_trace_file_names:
   plt.figure()
   plt.plot(trace_arr)
   plt.title(trace_fname)
+# %%
