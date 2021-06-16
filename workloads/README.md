@@ -18,3 +18,8 @@ experiments.
 - [Kubeflow Serving Libraries - Seldon, BentoML, NVIDIA Triton, TFServing](https://www.kubeflow.org/docs/external-add-ons/serving/)
 - MobileNet?
 - TFHub workloads?
+
+The following seem like good additions to the list of workloads in the BentoML gallery:
+
+- Pytorch CIFAR10 Sample
+- Keras Toxic Comment Classification

@@ -43,6 +43,7 @@ predict_request = [{'b64': image_b64}] * 5
 response = requests.post('http://localhost:5000/predict', json=predict_request)
 response.raise_for_status()
 
+print('reponse time (ms):', response.elapsed.total_seconds() * 1000)
 print(response.json())
 
 print('='*50)
