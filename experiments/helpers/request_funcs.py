@@ -19,12 +19,14 @@ WORKLOAD_BENTOML_IRIS_NAME = 'bentoml-iris'
 WORKLOAD_BENTOML_ONNX_RESNET50 = 'bentoml-onnx-resnet50'
 WORKLOAD_TFSERVING_RESNETV2 = 'tfserving-resnetv2'
 WORKLOAD_TFSERVING_MOBILENETV1 = 'tfserving-mobilenetv1'
+WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST = 'bentoml-pytorch-fashion-mnist'
 
 default_server_urls = {
     WORKLOAD_BENTOML_IRIS_NAME: 'http://bentoml-iris.default.kn.nima-dev.com/predict',
     WORKLOAD_BENTOML_ONNX_RESNET50: 'http://bentoml-onnx-resnet50.default.kn.nima-dev.com/predict',
     WORKLOAD_TFSERVING_RESNETV2: 'http://tfserving-resnetv2.default.kn.nima-dev.com/v1/models/resnet:predict',
     WORKLOAD_TFSERVING_MOBILENETV1: 'http://tfserving-mobilenetv1.default.kn.nima-dev.com/v1/models/mobilenet:predict',
+    WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: 'http://bentoml-pytorch-fashion-mnist.default.kn.nima-dev.com/predict',
 }
 
 ds_iris = tfds.load('iris', split='train', shuffle_files=False)
@@ -202,11 +204,27 @@ def request_tfserving_mobilenetv1(batch_size=1, url=None):
     }
 
 
+
+def request_bentoml_pytorch_fashion_mnist(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST]
+
+    predict_request = random.choices(ds_imagenet_images_bentoml_files, k=batch_size)
+    response = requests.post(url, json=predict_request)
+    response.raise_for_status()
+    return {
+        'prediction': response.json(),
+        'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
+    }
+
+
 workload_funcs = {
     WORKLOAD_BENTOML_IRIS_NAME: request_bentoml_iris,
     WORKLOAD_BENTOML_ONNX_RESNET50: request_bentoml_onnx_resnet50,
     WORKLOAD_TFSERVING_RESNETV2: request_tfserving_resnetv2,
     WORKLOAD_TFSERVING_MOBILENETV1: request_tfserving_mobilenetv1,
+    WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: request_bentoml_pytorch_fashion_mnist,
 }
 
 
