@@ -12,7 +12,7 @@ import pandas as pd
 list_of_classes = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 max_text_length = 400
 
-@env(pip_packages=['tensorflow==1.14.0', 'keras==2.3.1', 'pandas', 'numpy'])
+@env(pip_packages=['tensorflow==2.4.1', 'scikit-learn==0.24.2', 'pandas', 'numpy'])
 @artifacts([PickleArtifact('x_tokenizer'), KerasModelArtifact('model')])
 class ToxicCommentClassification(BentoService):
     
