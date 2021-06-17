@@ -16,3 +16,9 @@ To compile the dependencies:
 pip install pip-tools
 pip-compile
 ```
+
+Sample workload:
+
+```json
+[{"comment_text": "bad terrible"}]
+```
