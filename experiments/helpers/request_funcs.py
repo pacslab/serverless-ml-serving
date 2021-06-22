@@ -36,8 +36,15 @@ ds_iris = tfds.load('iris', split='train', shuffle_files=False)
 iris_featurs = [list(d['features'].numpy().tolist()) for d in ds_iris]
 ds_toxic_comments = pd.read_csv('jigsaw_comments_test.csv')['comment_text'].values
 
+
+def keras_toxic_prediction_parsing(p):
+    if p['toxic'] > 0.5:
+        return 'toxic'
+    else:
+        return 'normal'
+
 # Keras Toxic Comment Classification
-def request_keras_toxi_comments(batch_size=1, url=None):
+def request_keras_toxic_comments(batch_size=1, url=None):
     if url is None:
         url = default_server_urls[WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS]
 
@@ -51,7 +58,7 @@ def request_keras_toxi_comments(batch_size=1, url=None):
     response = requests.post(url, json=predict_request)
     response.raise_for_status()
     return {
-        'prediction': response.json(),
+        'prediction': [keras_toxic_prediction_parsing(p) for p in response.json()],
         'response_time_ms': response.elapsed.total_seconds()*1000,
         'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
     }
@@ -248,7 +255,7 @@ workload_funcs = {
     WORKLOAD_TFSERVING_RESNETV2: request_tfserving_resnetv2,
     WORKLOAD_TFSERVING_MOBILENETV1: request_tfserving_mobilenetv1,
     WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: request_bentoml_pytorch_fashion_mnist,
-    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: request_keras_toxi_comments
+    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: request_keras_toxic_comments
 }
 
 
