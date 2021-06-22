@@ -9,6 +9,7 @@ import time
 from tqdm.auto import tqdm
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow_datasets as tfds
 from tensorflow.keras.applications import imagenet_utils
@@ -20,6 +21,7 @@ WORKLOAD_BENTOML_ONNX_RESNET50 = 'bentoml-onnx-resnet50'
 WORKLOAD_TFSERVING_RESNETV2 = 'tfserving-resnetv2'
 WORKLOAD_TFSERVING_MOBILENETV1 = 'tfserving-mobilenetv1'
 WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST = 'bentoml-pytorch-fashion-mnist'
+WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS = 'bentoml-keras-toxic-comments'
 
 default_server_urls = {
     WORKLOAD_BENTOML_IRIS_NAME: 'http://bentoml-iris.default.kn.nima-dev.com/predict',
@@ -27,11 +29,32 @@ default_server_urls = {
     WORKLOAD_TFSERVING_RESNETV2: 'http://tfserving-resnetv2.default.kn.nima-dev.com/v1/models/resnet:predict',
     WORKLOAD_TFSERVING_MOBILENETV1: 'http://tfserving-mobilenetv1.default.kn.nima-dev.com/v1/models/mobilenet:predict',
     WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: 'http://bentoml-pytorch-fashion-mnist.default.kn.nima-dev.com/predict',
+    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: 'http://bentoml-keras-toxic-comments.default.kn.nima-dev.com/predict',
 }
 
 ds_iris = tfds.load('iris', split='train', shuffle_files=False)
 iris_featurs = [list(d['features'].numpy().tolist()) for d in ds_iris]
+ds_toxic_comments = pd.read_csv('jigsaw_comments_test.csv')['content'].values
 
+# Keras Toxic Comment Classification
+def request_keras_toxi_comments(batch_size=1, url=None):
+    if url is None:
+        url = default_server_urls[WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS]
+
+    predict_comments = random.choices(ds_toxic_comments, k=batch_size)
+    predict_request = [
+        {
+            "comment_text": c,
+        }
+        for c in predict_comments 
+    ]
+    response = requests.post(url, json=predict_request)
+    response.raise_for_status()
+    return {
+        'prediction': response.json(),
+        'response_time_ms': response.elapsed.total_seconds()*1000,
+        'headers': {k: response.headers[k] for k in response.headers if k.startswith('X-')},
+    }
 
 # Iris on BentoML
 def request_bentoml_iris(batch_size=1, url=None):
@@ -225,6 +248,7 @@ workload_funcs = {
     WORKLOAD_TFSERVING_RESNETV2: request_tfserving_resnetv2,
     WORKLOAD_TFSERVING_MOBILENETV1: request_tfserving_mobilenetv1,
     WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: request_bentoml_pytorch_fashion_mnist,
+    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: request_keras_toxi_comments
 }
 
 
