@@ -26,9 +26,9 @@ echo "command to test it out:"
 echo "docker run --rm -p 5000:5000 $DOCKER_IMAGE --workers=2"
 
 # test it out:
-# TEST_CONTAINER_NAME=bentoml-keras-toxic-comment-test
-# docker run --rm -d -p 5000:5000 --name $TEST_CONTAINER_NAME $DOCKER_IMAGE --workers=2
+TEST_CONTAINER_NAME=bentoml-keras-toxic-comment-test
+docker run --rm -d -p 5000:5000 --name $TEST_CONTAINER_NAME $DOCKER_IMAGE --workers=2
 
-# python test.py
+python test.py
 
-# docker stop $TEST_CONTAINER_NAME
+docker stop $TEST_CONTAINER_NAME

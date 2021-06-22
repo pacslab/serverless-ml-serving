@@ -1,6 +1,6 @@
 {
   "name": "bentoml-keras-toxic-comments",
-  "image": "ghcr.io/nimamahmoudi/bentoml-keras-toxic-comment-classification:20210616224937",
+  "image": "ghcr.io/nimamahmoudi/bentoml-keras-toxic-comment-classification:20210622155420",
   "env": {},
   "opts": {
     "--limit": "'cpu=250m,memory=512Mi'",

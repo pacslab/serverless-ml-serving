@@ -28,5 +28,5 @@ class ToxicCommentClassification(BentoService):
         prediction = self.artifacts.model.predict(input_data)
         result = []
         for i in prediction:
-            result.append(list_of_classes[np.argmax(i)])
+            result.append({ list_of_classes[n]: i[n] for n in range(len(list_of_classes)) })
         return result
