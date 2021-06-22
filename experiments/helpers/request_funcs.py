@@ -1,6 +1,7 @@
 import requests
 import base64
 import json
+import os
 import random
 import traceback
 import io
@@ -34,7 +35,8 @@ default_server_urls = {
 
 ds_iris = tfds.load('iris', split='train', shuffle_files=False)
 iris_featurs = [list(d['features'].numpy().tolist()) for d in ds_iris]
-ds_toxic_comments = pd.read_csv('jigsaw_comments_test.csv')['comment_text'].values
+ds_toxic_comments_file = os.path.join(os.path.dirname(__file__), 'jigsaw_comments_test.csv')
+ds_toxic_comments = pd.read_csv(ds_toxic_comments_file)['comment_text'].values
 
 
 def keras_toxic_prediction_parsing(p):
