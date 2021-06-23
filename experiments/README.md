@@ -25,3 +25,8 @@ To set the server timezone:
 sudo timedatectl set-timezone America/Toronto
 # to get a list of timezones: timedatectl list-timezones
 ```
+
+## Environment Variables
+
+- `KN_DOMAIN`: The domain under which your knative installation will live. If you don't have a domain name or are using local
+  ip addresses, you can `nip.io`. For example `192-168-1-1.nip.io` resolves to `192.168.1.1`.

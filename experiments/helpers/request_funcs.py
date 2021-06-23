@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 import tensorflow_datasets as tfds
 from tensorflow.keras.applications import imagenet_utils
 
+kn_domain = os.getenv('KN_DOMAIN')
+print(f"using domain {kn_domain}")
+
 IMAGE_SAMPLE_SIZE = 100
 
 WORKLOAD_BENTOML_IRIS_NAME = 'bentoml-iris'
@@ -25,12 +28,12 @@ WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST = 'bentoml-pytorch-fashion-mnist'
 WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS = 'bentoml-keras-toxic-comments'
 
 default_server_urls = {
-    WORKLOAD_BENTOML_IRIS_NAME: 'http://bentoml-iris.default.kn.nima-dev.com/predict',
-    WORKLOAD_BENTOML_ONNX_RESNET50: 'http://bentoml-onnx-resnet50.default.kn.nima-dev.com/predict',
-    WORKLOAD_TFSERVING_RESNETV2: 'http://tfserving-resnetv2.default.kn.nima-dev.com/v1/models/resnet:predict',
-    WORKLOAD_TFSERVING_MOBILENETV1: 'http://tfserving-mobilenetv1.default.kn.nima-dev.com/v1/models/mobilenet:predict',
-    WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: 'http://bentoml-pytorch-fashion-mnist.default.kn.nima-dev.com/predict',
-    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: 'http://bentoml-keras-toxic-comments.default.kn.nima-dev.com/predict',
+    WORKLOAD_BENTOML_IRIS_NAME: f'http://bentoml-iris.default.{kn_domain}/predict',
+    WORKLOAD_BENTOML_ONNX_RESNET50: f'http://bentoml-onnx-resnet50.default.{kn_domain}/predict',
+    WORKLOAD_TFSERVING_RESNETV2: f'http://tfserving-resnetv2.default.{kn_domain}/v1/models/resnet:predict',
+    WORKLOAD_TFSERVING_MOBILENETV1: f'http://tfserving-mobilenetv1.default.{kn_domain}/v1/models/mobilenet:predict',
+    WORKLOAD_BENTOML_PYTORCH_FASHION_MNIST: f'http://bentoml-pytorch-fashion-mnist.default.{kn_domain}/predict',
+    WORKLOAD_BENTOML_KERAS_TOXIC_COMMENTS: f'http://bentoml-keras-toxic-comments.default.{kn_domain}/predict',
 }
 
 ds_iris = tfds.load('iris', split='train', shuffle_files=False)
