@@ -108,12 +108,16 @@ class SmartProxyController:
             shouldIncrease = True
             if proxy_stats['reponseTimeP95'] is not None:
                 if proxy_stats['reponseTimeP95'] >= self.slo_target:
-                    logging.info(f"reponseTimeP95 ({proxy_stats['reponseTimeP95']}) >= slo_target ({self.slo_target})")
+                    logging.info(f"-- reponseTimeP95 ({proxy_stats['reponseTimeP95']}) >= slo_target ({self.slo_target})")
                     shouldIncrease = False
+                else:
+                    logging.info(f"++ reponseTimeP95 ({proxy_stats['reponseTimeP95']}) < slo_target ({self.slo_target})")
             if proxy_stats['averageTimeoutRatio'] is not None:
                 if proxy_stats['averageTimeoutRatio'] >= self.average_timeout_ratio_threshold:
-                    logging.info(f"averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) >= average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
+                    logging.info(f"-- averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) >= average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
                     shouldIncrease = False
+                else:
+                    logging.info(f"++ averageTimeoutRatio({proxy_stats['averageTimeoutRatio']}) < average_timeout_ratio_threshold({self.average_timeout_ratio_threshold})")
 
             new_bs = SmartProxyController.calculate_new_bs(self.curr_bs, shouldIncrease, self.bs_config)
             self.set_proxy_config({
