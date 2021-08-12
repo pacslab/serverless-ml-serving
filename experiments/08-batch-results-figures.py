@@ -218,8 +218,11 @@ fix_log_x_plot()
 plt.gcf().subplots_adjust(left=0.14, bottom=0.17)
 save_fig('relative_time_per_inference', 'all')
 
+# %%
 
-
+# extract values for tables
+resp_time_base_results_df = rel_avg_resp_time_all.loc[rel_avg_resp_time_all['batch_size'] == 1, ['resp_time_avg', 'exp_name']]
+display(resp_time_base_results_df)
 
 
 
