@@ -3,10 +3,9 @@
 # %%
 import math
 import matplotlib.ticker as mticker
-from numpy.lib.function_base import disp
 import pacsltk
 from IPython.display import display
-from matplotlib.ticker import NullFormatter, ScalarFormatter
+from matplotlib.ticker import ScalarFormatter, FormatStrFormatter
 import seaborn as sns
 from scipy import stats
 from pandas.plotting import register_matplotlib_converters
@@ -64,25 +63,59 @@ def fix_log_y_plot():
 # slo_timeout = 500
 # trace_name = 'trace2'
 
-service_name = 'bentoml-pytorch-fashion-mnist'
-trace_name = 'trace_trace_wc'
-exp_name = 'res-2021-07-29_23-08-36_proxy'
-exp_no_proxy_name = 'res-2021-07-29_18-18-28_proxy_no_controller'
-slo_timeout = 1000
+# service_name = 'bentoml-pytorch-fashion-mnist'
+# trace_name = 'trace_trace_wc'
+# exp_name = 'res-2021-07-29_23-08-36_proxy'
+# exp_no_proxy_name = 'res-2021-07-29_18-18-28_proxy_no_controller'
+# slo_timeout = 1000
 
 
 # service_name = 'bentoml-iris'
 # trace_name = 'trace_trace_wc'
-# experiments
+# # experiments
 # exp_name = 'res-2021-08-03_11-46-33_proxy' # max 50
-# exp_name = 'res-2021-08-03_19-10-32_proxy'
-# exp_name = 'res-2021-08-04_11-35-40_proxy'
-# slo_timeout = 500
-# exp_name = 'res-2021-08-04_15-54-03_proxy'
-# exp_name = 'res-2021-08-04_18-12-27_proxy' # max 200
-# slo_timeout = 200
-# no proxy experiment
+# # exp_name = 'res-2021-08-03_19-10-32_proxy'
+# # exp_name = 'res-2021-08-04_11-35-40_proxy'
+# # slo_timeout = 500
+# # exp_name = 'res-2021-08-04_15-54-03_proxy'
+# # exp_name = 'res-2021-08-04_18-12-27_proxy' # max 200
+# # slo_timeout = 200
+# # no proxy experiment
 # exp_no_proxy_name = 'res-2021-08-03_16-39-31_proxy_no_controller' # max 50
+# # exp_no_proxy_name = 'res-2021-08-06_13-47-11_proxy_no_controller' # max 200
+
+configs = {
+    # 'iris_max50': {
+    #     'service_name': 'bentoml-iris',
+    #     'trace_name': 'trace_trace_wc',
+    #     'exp_name': 'res-2021-08-03_11-46-33_proxy',
+    #     'exp_no_proxy_name': 'res-2021-08-03_16-39-31_proxy_no_controller',
+    #     'slo_timeout': 500,
+    # },
+    'iris_max200': {
+        'service_name': 'bentoml-iris',
+        'trace_name': 'trace_trace_wc',
+        'exp_name': 'res-2021-08-04_18-12-27_proxy',
+        'exp_no_proxy_name': 'res-2021-08-06_13-47-11_proxy_no_controller',
+        'slo_timeout': 500,
+    },
+    # 'fashion_mnist_max30': {
+    #     'service_name': 'bentoml-pytorch-fashion-mnist',
+    #     'trace_name': 'trace_trace_wc',
+    #     'exp_name': 'res-2021-07-29_23-08-36_proxy',
+    #     'exp_no_proxy_name': 'res-2021-07-29_18-18-28_proxy_no_controller',
+    #     'slo_timeout': 1000,
+    # }
+}
+
+selected_config = 'iris_max200'
+config = configs[selected_config]
+service_name = config['service_name']
+trace_name = config['trace_name']
+exp_name = config['exp_name']
+exp_no_proxy_name = config['exp_no_proxy_name']
+slo_timeout = config['slo_timeout']
+
 
 # %%
 
@@ -211,6 +244,16 @@ def plot_over_time_both(**kwargs):
     df_res_resample_mean = df_res_resample.mean()
     df_res_resample_no_proxy_mean = df_res_resample_no_proxy.mean()
 
+    config_name = kwargs.get('config_name')
+    figs_folder = kwargs.get('figs_folder')
+
+    def save_fig(figname, default_margins=True):
+        # same margins for all so they fall in line with each other
+        if default_margins:
+            plt.gcf().subplots_adjust(left=0.20, bottom=0.17)
+        plt.savefig(figs_folder + f"{config_name}_{figname}" + ".png", dpi=600)
+        plt.savefig(figs_folder + f"{config_name}_{figname}" + ".pdf")
+
     slo_timeout = kwargs.get('slo_timeout')
 
     plt.figure()
@@ -248,13 +291,16 @@ def plot_over_time_both(**kwargs):
     slo_miss_rates_no_proxy = slo_miss_count_no_proxy / resampled_request_count_no_proxy * 100
     slo_miss_rates_no_proxy_all = slo_miss_count_no_proxy.sum() / resampled_request_count_no_proxy.sum() * 100
     # plot the slo miss rates
-    plt.figure()
-    plt.plot(slo_miss_rates, label="SLO Miss (*)")
-    plt.plot(slo_miss_rates_no_proxy, label="SLO Miss")
-    plt.axhline(y=5, ls='--', c='r')
-    plt.ylabel('SLO Miss Rate (%)')
+    plt.figure(figsize=(4,2.5))
+    plt.plot(slo_miss_rates, label="SLA Miss (*)")
+    plt.plot(slo_miss_rates_no_proxy, label="SLA Miss")
+    plt.axhline(y=5, ls='--', c='r', label='SLA Thresh')
+    plt.ylabel('SLA Miss Rate (%)')
     plt.xlabel('Time (HH:MM)')
     fix_x_axis_timedelta()
+    plt.legend()
+    plt.grid()
+    save_fig('slo_miss_rate')
 
     
     # ccdf min and max value
@@ -273,19 +319,19 @@ def plot_over_time_both(**kwargs):
     global ccdf_freqs
     ccdf_values = np.linspace(ccdf_min_value, ccdf_max_value, 100)
     ccdf_freqs = pd.Series(ccdf_values).apply(lambda x: np.sum(df_res['response_time_ms_server'] < x))
-    ccdf_freqs = 100 - (ccdf_freqs / ccdf_freqs.iloc[-1] * 100)
+    ccdf_freqs = 100 - (ccdf_freqs / df_res['response_time_ms_server'].shape[0] * 100)
     ccdf_slo_loc = np.where(ccdf_values > slo_timeout)[0][0]
     ccdf_slo_tick = ccdf_freqs[ccdf_slo_loc]
     # ccdf without proxy
     ccdf_values_no_proxy = ccdf_values
     ccdf_freqs_no_proxy = pd.Series(ccdf_values_no_proxy).apply(lambda x: np.sum(df_res_no_proxy['response_time_ms_server'] < x))
-    ccdf_freqs_no_proxy = 100 - (ccdf_freqs_no_proxy / ccdf_freqs_no_proxy.iloc[-1] * 100)
+    ccdf_freqs_no_proxy = 100 - (ccdf_freqs_no_proxy / df_res_no_proxy['response_time_ms_server'].shape[0] * 100)
     ccdf_slo_loc_no_proxy = np.where(ccdf_values_no_proxy > slo_timeout)[0][0]
     ccdf_slo_tick_no_proxy = ccdf_freqs_no_proxy[ccdf_slo_loc_no_proxy]
     # plotting ccdf
     plt.figure(figsize=(4,2.5))
-    plt.plot(ccdf_values, ccdf_freqs)
-    plt.loglog(ccdf_values_no_proxy, ccdf_freqs_no_proxy)
+    plt.plot(ccdf_values, ccdf_freqs, label='CCDF (*)')
+    plt.loglog(ccdf_values_no_proxy, ccdf_freqs_no_proxy, label='CCDF')
     plt.axvline(x=slo_timeout, ls='--', c='r', lw=1)
     plt.xlim([ccdf_min_value*0.8, ccdf_max_value*1.2])
     plt.hlines(y=ccdf_slo_tick, xmin=0, xmax=slo_timeout, ls='--', color='k', lw=1)
@@ -294,7 +340,14 @@ def plot_over_time_both(**kwargs):
     fix_log_y_plot()
     plt.ylabel('CCDF (%)')
     plt.xlabel('Latency (ms)')
-    plt.yticks([ccdf_slo_tick, ccdf_slo_tick_no_proxy, 100])
+    yticks = [100, ccdf_slo_tick]
+    # if the two ticks are further than some percentage away
+    if np.abs((ccdf_slo_tick_no_proxy - ccdf_slo_tick) / ccdf_slo_tick) * 100 > 5:
+        yticks += [ccdf_slo_tick_no_proxy]
+    plt.yticks(yticks)
+    plt.legend()
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    save_fig('ccdf')
 
     # generate the stats needed for the paper
     exp_stats = {
@@ -306,7 +359,9 @@ def plot_over_time_both(**kwargs):
     }
     exp_stats_df = pd.DataFrame(data=exp_stats)
     exp_stats_df['SLO Miss Improvement'] = 100 - exp_stats_df['SLO Miss Rate'] / slo_miss_rates_no_proxy_all * 100
-    display(exp_stats_df.T)
+    exp_stats_df = exp_stats_df.T
+    exp_stats_df.to_csv(figs_folder + f"{config_name}_summary.csv")
+    display(exp_stats_df)
 
     return {}
 
@@ -339,24 +394,31 @@ def process_exp_path(vals, processing_pipeline):
         inter.update(inter_update)
     return inter
 
-# rel_avg_resp_time_all = None
-# for exp_path in exp_paths:
-#     vals = {
-#         'exp_path': exp_path,
-#         'service_name': service_name,
-#         'trace_name': trace_name,
-#     }
+for k in configs:
+    config_name = k
+    config = configs[k]
+    exp_name = config['exp_name']
+    exp_no_proxy_name = config['exp_no_proxy_name']
+    service_name = config['service_name']
+    trace_name = config['trace_name']
+    slo_timeout = config['slo_timeout']
+    print('Config Name:', config_name)
 
+    figs_folder = f"./figs/{trace_name}/"
+    # create the figs folder
+    get_ipython().system('mkdir -p {figs_folder}')
 
-vals = {
-    'exp_name_main': exp_name,
-    'exp_name_no_proxy': exp_no_proxy_name,
-    'exp_name': exp_no_proxy_name,
-    'service_name': service_name,
-    'trace_name': trace_name,
-    'slo_timeout': slo_timeout,
-    'exp_no_proxy_name': exp_no_proxy_name,
-}
-_ = process_exp_path(vals, processing_pipeline)
+    vals = {
+        'config_name': config_name,
+        'figs_folder': figs_folder,
+        'exp_name_main': exp_name,
+        'exp_name_no_proxy': exp_no_proxy_name,
+        'exp_name': exp_no_proxy_name,
+        'service_name': service_name,
+        'trace_name': trace_name,
+        'slo_timeout': slo_timeout,
+        'exp_no_proxy_name': exp_no_proxy_name,
+    }
+    process_exp_path(vals, processing_pipeline)
 
 # %%
