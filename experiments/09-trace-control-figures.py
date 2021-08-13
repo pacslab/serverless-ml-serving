@@ -52,31 +52,37 @@ def fix_x_axis_timedelta(timescale=1e9):
     formatter = mticker.FuncFormatter(timeTicks)
     plt.gca().xaxis.set_major_formatter(formatter)
 
+def fix_log_x_plot():
+    plt.gca().xaxis.set_major_formatter(ScalarFormatter())
+
+def fix_log_y_plot():
+    plt.gca().yaxis.set_major_formatter(ScalarFormatter())
+
 # %%
 # service_name = 'bentoml-keras-toxic-comments'
 # exp_name = 'res-2021-06-28_22-09-08'
 # slo_timeout = 500
 # trace_name = 'trace2'
 
-# service_name = 'bentoml-pytorch-fashion-mnist'
-# trace_name = 'trace_trace_wc'
-# # exp_name = 'res-2021-07-29_18-18-28_proxy_no_controller'
-# exp_name = 'res-2021-07-29_23-08-36_proxy'
-# slo_timeout = 1000
-
-
-service_name = 'bentoml-iris'
+service_name = 'bentoml-pytorch-fashion-mnist'
 trace_name = 'trace_trace_wc'
+exp_name = 'res-2021-07-29_23-08-36_proxy'
+exp_no_proxy_name = 'res-2021-07-29_18-18-28_proxy_no_controller'
+slo_timeout = 1000
+
+
+# service_name = 'bentoml-iris'
+# trace_name = 'trace_trace_wc'
 # experiments
-exp_name = 'res-2021-08-03_11-46-33_proxy' # max 50
+# exp_name = 'res-2021-08-03_11-46-33_proxy' # max 50
 # exp_name = 'res-2021-08-03_19-10-32_proxy'
 # exp_name = 'res-2021-08-04_11-35-40_proxy'
-slo_timeout = 500
+# slo_timeout = 500
 # exp_name = 'res-2021-08-04_15-54-03_proxy'
 # exp_name = 'res-2021-08-04_18-12-27_proxy' # max 200
 # slo_timeout = 200
 # no proxy experiment
-exp_no_proxy_name = 'res-2021-08-03_16-39-31_proxy_no_controller' # max 50
+# exp_no_proxy_name = 'res-2021-08-03_16-39-31_proxy_no_controller' # max 50
 
 # %%
 
@@ -226,12 +232,81 @@ def plot_over_time_both(**kwargs):
     plt.legend()
 
     plt.figure()
-    plt.plot(df_res_resample_mean['upstream_request_count'], label='Serverless Reqs (*)')
-    plt.plot(df_res_resample_no_proxy_mean['upstream_request_count'], label='Serverless Reqs')
+    plt.plot(df_res_resample_mean['upstream_request_count'], label='Batch Size (*)')
+    # plt.plot(df_res_resample_no_proxy_mean['upstream_request_count'], label='Batch Size')
     fix_x_axis_timedelta()
     plt.legend()
 
-    display(df_res_resample_mean)
+    # slo miss rates with proxy
+    slo_miss_count = df_res_resample['response_time_ms_server'].apply(lambda x: np.sum(x > slo_timeout))
+    resampled_request_count = df_res_resample['response_time_ms_server'].apply(lambda x: len(x))
+    slo_miss_rates = slo_miss_count / resampled_request_count * 100
+    slo_miss_rates_all = slo_miss_count.sum() / resampled_request_count.sum() * 100
+    # slow miss rates without proxy
+    slo_miss_count_no_proxy = df_res_resample_no_proxy['response_time_ms_server'].apply(lambda x: np.sum(x > slo_timeout))
+    resampled_request_count_no_proxy = df_res_resample_no_proxy['response_time_ms_server'].apply(lambda x: len(x))
+    slo_miss_rates_no_proxy = slo_miss_count_no_proxy / resampled_request_count_no_proxy * 100
+    slo_miss_rates_no_proxy_all = slo_miss_count_no_proxy.sum() / resampled_request_count_no_proxy.sum() * 100
+    # plot the slo miss rates
+    plt.figure()
+    plt.plot(slo_miss_rates, label="SLO Miss (*)")
+    plt.plot(slo_miss_rates_no_proxy, label="SLO Miss")
+    plt.axhline(y=5, ls='--', c='r')
+    plt.ylabel('SLO Miss Rate (%)')
+    plt.xlabel('Time (HH:MM)')
+    fix_x_axis_timedelta()
+
+    
+    # ccdf min and max value
+    ccdf_max_value = max(
+        df_res['response_time_ms_server'].max(),
+        df_res_no_proxy['response_time_ms_server'].max()
+    )
+    ccdf_max_value = min(ccdf_max_value, slo_timeout*2)
+    ccdf_max_value = max(ccdf_max_value, slo_timeout*1.1)
+    ccdf_min_value = min(
+        df_res['response_time_ms_server'].min(),
+        df_res_no_proxy['response_time_ms_server'].min()
+    )
+    # ccdf with proxy
+    global ccdf_values
+    global ccdf_freqs
+    ccdf_values = np.linspace(ccdf_min_value, ccdf_max_value, 100)
+    ccdf_freqs = pd.Series(ccdf_values).apply(lambda x: np.sum(df_res['response_time_ms_server'] < x))
+    ccdf_freqs = 100 - (ccdf_freqs / ccdf_freqs.iloc[-1] * 100)
+    ccdf_slo_loc = np.where(ccdf_values > slo_timeout)[0][0]
+    ccdf_slo_tick = ccdf_freqs[ccdf_slo_loc]
+    # ccdf without proxy
+    ccdf_values_no_proxy = ccdf_values
+    ccdf_freqs_no_proxy = pd.Series(ccdf_values_no_proxy).apply(lambda x: np.sum(df_res_no_proxy['response_time_ms_server'] < x))
+    ccdf_freqs_no_proxy = 100 - (ccdf_freqs_no_proxy / ccdf_freqs_no_proxy.iloc[-1] * 100)
+    ccdf_slo_loc_no_proxy = np.where(ccdf_values_no_proxy > slo_timeout)[0][0]
+    ccdf_slo_tick_no_proxy = ccdf_freqs_no_proxy[ccdf_slo_loc_no_proxy]
+    # plotting ccdf
+    plt.figure(figsize=(4,2.5))
+    plt.plot(ccdf_values, ccdf_freqs)
+    plt.loglog(ccdf_values_no_proxy, ccdf_freqs_no_proxy)
+    plt.axvline(x=slo_timeout, ls='--', c='r', lw=1)
+    plt.xlim([ccdf_min_value*0.8, ccdf_max_value*1.2])
+    plt.hlines(y=ccdf_slo_tick, xmin=0, xmax=slo_timeout, ls='--', color='k', lw=1)
+    plt.hlines(y=ccdf_slo_tick_no_proxy, xmin=0, xmax=slo_timeout, ls='--', color='k', lw=1)
+    fix_log_x_plot()
+    fix_log_y_plot()
+    plt.ylabel('CCDF (%)')
+    plt.xlabel('Latency (ms)')
+    plt.yticks([ccdf_slo_tick, ccdf_slo_tick_no_proxy, 100])
+
+    # generate the stats needed for the paper
+    exp_stats = {
+        'ML Proxy': [True, False],
+        'SLO Miss Rate': [
+            slo_miss_rates_all,
+            slo_miss_rates_no_proxy_all
+        ]
+    }
+    exp_stats_df = pd.DataFrame(data=exp_stats)
+    exp_stats_df['SLO Miss Improvement'] = 100 - exp_stats_df['SLO Miss Rate'] / slo_miss_rates_no_proxy_all * 100
+    display(exp_stats_df.T)
 
     return {}
 
@@ -282,4 +357,6 @@ vals = {
     'slo_timeout': slo_timeout,
     'exp_no_proxy_name': exp_no_proxy_name,
 }
-process_exp_path(vals, processing_pipeline)
+_ = process_exp_path(vals, processing_pipeline)
+
+# %%
