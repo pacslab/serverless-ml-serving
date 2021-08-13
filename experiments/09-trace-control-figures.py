@@ -84,31 +84,78 @@ def fix_log_y_plot():
 # exp_no_proxy_name = 'res-2021-08-03_16-39-31_proxy_no_controller' # max 50
 # # exp_no_proxy_name = 'res-2021-08-06_13-47-11_proxy_no_controller' # max 200
 
-configs = {
-    # 'iris_max50': {
-    #     'service_name': 'bentoml-iris',
-    #     'trace_name': 'trace_trace_wc',
-    #     'exp_name': 'res-2021-08-03_11-46-33_proxy',
-    #     'exp_no_proxy_name': 'res-2021-08-03_16-39-31_proxy_no_controller',
-    #     'slo_timeout': 500,
-    # },
-    'iris_max200': {
-        'service_name': 'bentoml-iris',
-        'trace_name': 'trace_trace_wc',
-        'exp_name': 'res-2021-08-04_18-12-27_proxy',
-        'exp_no_proxy_name': 'res-2021-08-06_13-47-11_proxy_no_controller',
-        'slo_timeout': 500,
+trace_configs = {
+    # trace_trace_wc ----------------------------------------------
+
+    'trace_trace_wc': {
+        'iris_max50': {
+            'service_name': 'bentoml-iris',
+            'trace_name': 'trace_trace_wc',
+            'exp_name': 'res-2021-08-03_11-46-33_proxy',
+            'exp_no_proxy_name': 'res-2021-08-03_16-39-31_proxy_no_controller',
+            'slo_timeout': 500,
+        },
+        'iris_max200': {
+            'service_name': 'bentoml-iris',
+            'trace_name': 'trace_trace_wc',
+            'exp_name': 'res-2021-08-04_18-12-27_proxy',
+            'exp_no_proxy_name': 'res-2021-08-06_13-47-11_proxy_no_controller',
+            'slo_timeout': 200,
+        },
+        'fashion_mnist_max30': {
+            'service_name': 'bentoml-pytorch-fashion-mnist',
+            'trace_name': 'trace_trace_wc',
+            'exp_name': 'res-2021-07-29_23-08-36_proxy',
+            'exp_no_proxy_name': 'res-2021-07-29_18-18-28_proxy_no_controller',
+            'slo_timeout': 1000,
+        },
+        'toxic_comments_max50': {
+            'service_name': 'bentoml-keras-toxic-comments',
+            'trace_name': 'trace_trace_wc',
+            'exp_name': 'res-2021-07-30_17-38-19_proxy',
+            'exp_no_proxy_name': 'res-2021-07-30_15-11-01_proxy_no_controller',
+            'slo_timeout': 500,
+        },
     },
-    # 'fashion_mnist_max30': {
-    #     'service_name': 'bentoml-pytorch-fashion-mnist',
-    #     'trace_name': 'trace_trace_wc',
-    #     'exp_name': 'res-2021-07-29_23-08-36_proxy',
-    #     'exp_no_proxy_name': 'res-2021-07-29_18-18-28_proxy_no_controller',
-    #     'slo_timeout': 1000,
-    # }
+
+    # trace_trace_t5 ----------------------------------------------
+
+    'trace_trace_t5': {
+        'iris_max200': {
+            'service_name': 'bentoml-iris',
+            'trace_name': 'trace_trace_t5',
+            'exp_name': 'res-2021-08-10_12-24-59_proxy',
+            'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
+            'slo_timeout': 200,
+        },
+        'iris_max200_2': {
+            'service_name': 'bentoml-iris',
+            'trace_name': 'trace_trace_t5',
+            'exp_name': 'res-2021-08-10_16-29-55_proxy',
+            'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
+            'slo_timeout': 500,
+        },
+        'toxic_comments_max50': {
+            'service_name': 'bentoml-keras-toxic-comments',
+            'trace_name': 'trace_trace_t5',
+            'exp_name': 'res-2021-08-10_19-21-54_proxy',
+            'exp_no_proxy_name': 'res-2021-08-11_13-25-09_proxy_no_controller',
+            'slo_timeout': 500,
+        },
+        'fashion_mnist_max30': {
+            'service_name': 'bentoml-pytorch-fashion-mnist',
+            'trace_name': 'trace_trace_t5',
+            'exp_name': 'res-2021-08-11_17-30-40_proxy',
+            'exp_no_proxy_name': 'res-2021-08-11_19-47-33_proxy_no_controller',
+            'slo_timeout': 1000,
+        },
+    },
 }
 
-selected_config = 'iris_max200'
+selected_trace_name = 'trace_trace_wc'
+selected_config = 'toxic_comments_max50'
+
+configs = trace_configs[selected_trace_name]
 config = configs[selected_config]
 service_name = config['service_name']
 trace_name = config['trace_name']
@@ -256,29 +303,47 @@ def plot_over_time_both(**kwargs):
 
     slo_timeout = kwargs.get('slo_timeout')
 
-    plt.figure()
-    plt.plot(df_proxy_stats['averageArrivalRate'])
-    plt.plot(df_proxy_stats_no_proxy['averageArrivalRate'])
+    plt.figure(figsize=(4,2.5))
+    plt.plot(df_proxy_stats['averageArrivalRate'], label='Arrival Rate (*)')
+    plt.plot(df_proxy_stats_no_proxy['averageArrivalRate'], label='Arrival Rate')
     fix_x_axis_timedelta()
+    plt.legend()
+    plt.xlabel('Time (HH:MM)')
+    plt.ylabel('Arrival Rate (req/s)')
+    plt.grid()
+    save_fig('arrival_rate')
 
-    plt.figure()
+    plt.figure(figsize=(4,2.5))
     plt.plot(df_proxy_stats['reponseTimeP95'], label='RT95 (*)')
     plt.plot(df_proxy_stats_no_proxy['reponseTimeP95'], label='RT95')
     plt.axhline(y=slo_timeout, ls='--', c='r', label='SLA Timeout')
     fix_x_axis_timedelta()
     plt.legend()
+    plt.xlabel('Time (HH:MM)')
+    plt.ylabel('P95 of Resp Time (ms)')
+    plt.grid()
+    save_fig('rt95')
+    
 
-    plt.figure()
+    plt.figure(figsize=(4,2.5))
     plt.plot(df_proxy_stats['currentReadyReplicaCount'], label='# of Cont (*)')
     plt.plot(df_proxy_stats_no_proxy['currentReadyReplicaCount'], label='# of Cont')
     fix_x_axis_timedelta()
     plt.legend()
+    plt.xlabel('Time (HH:MM)')
+    plt.ylabel('# of Containers')
+    plt.grid()
+    save_fig('num_of_cont')
 
-    plt.figure()
+    plt.figure(figsize=(4,2.5))
     plt.plot(df_res_resample_mean['upstream_request_count'], label='Batch Size (*)')
     # plt.plot(df_res_resample_no_proxy_mean['upstream_request_count'], label='Batch Size')
     fix_x_axis_timedelta()
     plt.legend()
+    plt.xlabel('Time (HH:MM)')
+    plt.ylabel('Average Batch Size')
+    plt.grid()
+    save_fig('batch_size')
 
     # slo miss rates with proxy
     slo_miss_count = df_res_resample['response_time_ms_server'].apply(lambda x: np.sum(x > slo_timeout))
@@ -394,31 +459,33 @@ def process_exp_path(vals, processing_pipeline):
         inter.update(inter_update)
     return inter
 
-for k in configs:
-    config_name = k
-    config = configs[k]
-    exp_name = config['exp_name']
-    exp_no_proxy_name = config['exp_no_proxy_name']
-    service_name = config['service_name']
-    trace_name = config['trace_name']
-    slo_timeout = config['slo_timeout']
-    print('Config Name:', config_name)
+for t in trace_configs:
+    configs = trace_configs[t]
+    for k in configs:
+        config_name = k
+        config = configs[k]
+        exp_name = config['exp_name']
+        exp_no_proxy_name = config['exp_no_proxy_name']
+        service_name = config['service_name']
+        trace_name = config['trace_name']
+        slo_timeout = config['slo_timeout']
+        print('Config Name:', config_name)
 
-    figs_folder = f"./figs/{trace_name}/"
-    # create the figs folder
-    get_ipython().system('mkdir -p {figs_folder}')
+        figs_folder = f"./figs/{trace_name}/"
+        # create the figs folder
+        get_ipython().system('mkdir -p {figs_folder}')
 
-    vals = {
-        'config_name': config_name,
-        'figs_folder': figs_folder,
-        'exp_name_main': exp_name,
-        'exp_name_no_proxy': exp_no_proxy_name,
-        'exp_name': exp_no_proxy_name,
-        'service_name': service_name,
-        'trace_name': trace_name,
-        'slo_timeout': slo_timeout,
-        'exp_no_proxy_name': exp_no_proxy_name,
-    }
-    process_exp_path(vals, processing_pipeline)
+        vals = {
+            'config_name': config_name,
+            'figs_folder': figs_folder,
+            'exp_name_main': exp_name,
+            'exp_name_no_proxy': exp_no_proxy_name,
+            'exp_name': exp_no_proxy_name,
+            'service_name': service_name,
+            'trace_name': trace_name,
+            'slo_timeout': slo_timeout,
+            'exp_no_proxy_name': exp_no_proxy_name,
+        }
+        process_exp_path(vals, processing_pipeline)
 
 # %%
