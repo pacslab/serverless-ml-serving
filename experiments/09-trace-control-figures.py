@@ -58,32 +58,6 @@ def fix_log_y_plot():
     plt.gca().yaxis.set_major_formatter(ScalarFormatter())
 
 # %%
-# service_name = 'bentoml-keras-toxic-comments'
-# exp_name = 'res-2021-06-28_22-09-08'
-# slo_timeout = 500
-# trace_name = 'trace2'
-
-# service_name = 'bentoml-pytorch-fashion-mnist'
-# trace_name = 'trace_trace_wc'
-# exp_name = 'res-2021-07-29_23-08-36_proxy'
-# exp_no_proxy_name = 'res-2021-07-29_18-18-28_proxy_no_controller'
-# slo_timeout = 1000
-
-
-# service_name = 'bentoml-iris'
-# trace_name = 'trace_trace_wc'
-# # experiments
-# exp_name = 'res-2021-08-03_11-46-33_proxy' # max 50
-# # exp_name = 'res-2021-08-03_19-10-32_proxy'
-# # exp_name = 'res-2021-08-04_11-35-40_proxy'
-# # slo_timeout = 500
-# # exp_name = 'res-2021-08-04_15-54-03_proxy'
-# # exp_name = 'res-2021-08-04_18-12-27_proxy' # max 200
-# # slo_timeout = 200
-# # no proxy experiment
-# exp_no_proxy_name = 'res-2021-08-03_16-39-31_proxy_no_controller' # max 50
-# # exp_no_proxy_name = 'res-2021-08-06_13-47-11_proxy_no_controller' # max 200
-
 trace_configs = {
     # trace_trace_wc ----------------------------------------------
 
@@ -99,7 +73,7 @@ trace_configs = {
             'service_name': 'bentoml-iris',
             'trace_name': 'trace_trace_wc',
             'exp_name': 'res-2021-08-04_18-12-27_proxy',
-            'exp_no_proxy_name': 'res-2021-08-06_13-47-11_proxy_no_controller',
+            'exp_no_proxy_name': 'res-2021-08-13_19-37-35_proxy_no_controller',
             'slo_timeout': 200,
         },
         'fashion_mnist_max30': {
@@ -153,7 +127,7 @@ trace_configs = {
 }
 
 selected_trace_name = 'trace_trace_wc'
-selected_config = 'toxic_comments_max50'
+selected_config = 'iris_max200'
 
 configs = trace_configs[selected_trace_name]
 config = configs[selected_config]
