@@ -127,7 +127,7 @@ trace_configs = {
 }
 
 selected_trace_name = 'trace_trace_wc'
-selected_config = 'iris_max200'
+selected_config = 'iris_max50'
 
 configs = trace_configs[selected_trace_name]
 config = configs[selected_config]
@@ -389,15 +389,42 @@ def plot_over_time_both(**kwargs):
     save_fig('ccdf')
 
     # generate the stats needed for the paper
+    average_replica_count = df_proxy_stats['currentReadyReplicaCount'].mean()
+    average_replica_count_no_proxy = df_proxy_stats_no_proxy['currentReadyReplicaCount'].mean()
     exp_stats = {
         'ML Proxy': [True, False],
         'SLO Miss Rate': [
             slo_miss_rates_all,
             slo_miss_rates_no_proxy_all
-        ]
+        ],
+        'Max RPS': [
+            df_proxy_stats['averageArrivalRate'].max(),
+            df_proxy_stats_no_proxy['averageArrivalRate'].max(),
+        ],
+        'Average Replica Count': [
+            average_replica_count,
+            average_replica_count_no_proxy,
+        ],
+        'Average Batch Size (over reqs)': [
+            df_res_resample_mean['upstream_request_count'].mean(),
+            1,
+        ],
+        'Average Batch Size (over time)': [
+            df_proxy_stats['averageActualBatchSize'].mean(),
+            1
+        ],
+        'Average Max Buffer Size': [
+            df_proxy_stats['averageMaxBufferSize'].mean(),
+            1,
+        ],
+        'Average RT95': [
+            df_proxy_stats['reponseTimeP95'].mean(),
+            df_proxy_stats_no_proxy['reponseTimeP95'].mean(),
+        ],
     }
     exp_stats_df = pd.DataFrame(data=exp_stats)
     exp_stats_df['SLO Miss Improvement'] = 100 - exp_stats_df['SLO Miss Rate'] / slo_miss_rates_no_proxy_all * 100
+    exp_stats_df['Average Replica Improvement'] = 100 - exp_stats_df['Average Replica Count'] / average_replica_count_no_proxy * 100
     exp_stats_df = exp_stats_df.T
     exp_stats_df.to_csv(figs_folder + f"{config_name}_summary.csv")
     display(exp_stats_df)
