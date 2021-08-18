@@ -61,73 +61,85 @@ def fix_log_y_plot():
 trace_configs = {
     # trace_trace_wc ----------------------------------------------
 
-    'trace_trace_wc': {
-        'iris_max50': {
-            'service_name': 'bentoml-iris',
-            'trace_name': 'trace_trace_wc',
-            'exp_name': 'res-2021-08-03_11-46-33_proxy',
-            'exp_no_proxy_name': 'res-2021-08-03_16-39-31_proxy_no_controller',
-            'slo_timeout': 500,
-        },
-        'iris_max200': {
-            'service_name': 'bentoml-iris',
-            'trace_name': 'trace_trace_wc',
-            'exp_name': 'res-2021-08-04_18-12-27_proxy',
-            'exp_no_proxy_name': 'res-2021-08-13_19-37-35_proxy_no_controller',
-            'slo_timeout': 200,
-        },
-        'fashion_mnist_max30': {
-            'service_name': 'bentoml-pytorch-fashion-mnist',
-            'trace_name': 'trace_trace_wc',
-            'exp_name': 'res-2021-07-29_23-08-36_proxy',
-            'exp_no_proxy_name': 'res-2021-07-29_18-18-28_proxy_no_controller',
-            'slo_timeout': 1000,
-        },
-        'toxic_comments_max50': {
-            'service_name': 'bentoml-keras-toxic-comments',
-            'trace_name': 'trace_trace_wc',
-            'exp_name': 'res-2021-07-30_17-38-19_proxy',
-            'exp_no_proxy_name': 'res-2021-07-30_15-11-01_proxy_no_controller',
-            'slo_timeout': 500,
-        },
-    },
+    # 'trace_trace_wc': {
+    #     'iris_max50': {
+    #         'service_name': 'bentoml-iris',
+    #         'trace_name': 'trace_trace_wc',
+    #         'exp_name': 'res-2021-08-03_11-46-33_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-03_16-39-31_proxy_no_controller',
+    #         'slo_timeout': 500,
+    #     },
+    #     'iris_max200': {
+    #         'service_name': 'bentoml-iris',
+    #         'trace_name': 'trace_trace_wc',
+    #         'exp_name': 'res-2021-08-04_18-12-27_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-13_19-37-35_proxy_no_controller',
+    #         'slo_timeout': 200,
+    #     },
+    #     'fashion_mnist_max30': {
+    #         'service_name': 'bentoml-pytorch-fashion-mnist',
+    #         'trace_name': 'trace_trace_wc',
+    #         'exp_name': 'res-2021-07-29_23-08-36_proxy',
+    #         'exp_no_proxy_name': 'res-2021-07-29_18-18-28_proxy_no_controller',
+    #         'slo_timeout': 1000,
+    #     },
+    #     'toxic_comments_max50': {
+    #         'service_name': 'bentoml-keras-toxic-comments',
+    #         'trace_name': 'trace_trace_wc',
+    #         'exp_name': 'res-2021-07-30_17-38-19_proxy',
+    #         'exp_no_proxy_name': 'res-2021-07-30_15-11-01_proxy_no_controller',
+    #         'slo_timeout': 500,
+    #     },
+    # },
 
-    # trace_trace_t5 ----------------------------------------------
+    # # trace_trace_t5 ----------------------------------------------
 
-    'trace_trace_t5': {
-        'iris_max200': {
-            'service_name': 'bentoml-iris',
-            'trace_name': 'trace_trace_t5',
-            'exp_name': 'res-2021-08-10_12-24-59_proxy',
-            'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
-            'slo_timeout': 200,
-        },
-        'iris_max200_2': {
-            'service_name': 'bentoml-iris',
-            'trace_name': 'trace_trace_t5',
-            'exp_name': 'res-2021-08-10_16-29-55_proxy',
-            'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
-            'slo_timeout': 500,
-        },
-        'toxic_comments_max50': {
-            'service_name': 'bentoml-keras-toxic-comments',
-            'trace_name': 'trace_trace_t5',
-            'exp_name': 'res-2021-08-10_19-21-54_proxy',
-            'exp_no_proxy_name': 'res-2021-08-11_13-25-09_proxy_no_controller',
-            'slo_timeout': 500,
-        },
-        'fashion_mnist_max30': {
+    # 'trace_trace_t5': {
+    #     'iris_max200': {
+    #         'service_name': 'bentoml-iris',
+    #         'trace_name': 'trace_trace_t5',
+    #         'exp_name': 'res-2021-08-10_12-24-59_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
+    #         'slo_timeout': 200,
+    #     },
+    #     'iris_max200_2': {
+    #         'service_name': 'bentoml-iris',
+    #         'trace_name': 'trace_trace_t5',
+    #         'exp_name': 'res-2021-08-10_16-29-55_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-06_16-33-09_proxy_no_controller',
+    #         'slo_timeout': 500,
+    #     },
+    #     'toxic_comments_max50': {
+    #         'service_name': 'bentoml-keras-toxic-comments',
+    #         'trace_name': 'trace_trace_t5',
+    #         'exp_name': 'res-2021-08-10_19-21-54_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-11_13-25-09_proxy_no_controller',
+    #         'slo_timeout': 500,
+    #     },
+    #     'fashion_mnist_max30': {
+    #         'service_name': 'bentoml-pytorch-fashion-mnist',
+    #         'trace_name': 'trace_trace_t5',
+    #         'exp_name': 'res-2021-08-11_17-30-40_proxy',
+    #         'exp_no_proxy_name': 'res-2021-08-11_19-47-33_proxy_no_controller',
+    #         'slo_timeout': 1000,
+    #     },
+    # },
+
+    # trace_trace_t4 ----------------------------------------------
+
+    'trace_trace_t4': {
+        'fashion_mnist_max100': {
             'service_name': 'bentoml-pytorch-fashion-mnist',
-            'trace_name': 'trace_trace_t5',
-            'exp_name': 'res-2021-08-11_17-30-40_proxy',
-            'exp_no_proxy_name': 'res-2021-08-11_19-47-33_proxy_no_controller',
+            'trace_name': 'trace_trace_t4',
+            'exp_name': 'res-2021-08-17_17-21-00_proxy',
+            'exp_no_proxy_name': 'res-2021-08-17_19-45-56_proxy_no_controller',
             'slo_timeout': 1000,
         },
     },
 }
 
-selected_trace_name = 'trace_trace_wc'
-selected_config = 'iris_max50'
+selected_trace_name = 'trace_trace_t4'
+selected_config = 'fashion_mnist_max100'
 
 configs = trace_configs[selected_trace_name]
 config = configs[selected_config]
