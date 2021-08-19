@@ -117,3 +117,4 @@ tmp
 
 # node modules
 node_modules
+.stignore
