@@ -99,7 +99,7 @@ trace_configs = {
         },
     },
 
-    # # trace_trace_t5 ----------------------------------------------
+    # trace_trace_t5 ----------------------------------------------
 
     'trace_trace_t5': {
         'iris_max200': {
@@ -142,11 +142,25 @@ trace_configs = {
             'exp_no_proxy_name': 'res-2021-08-17_19-45-56_proxy_no_controller',
             'slo_timeout': 1000,
         },
+        'iris_max200': {
+            'service_name': 'bentoml-iris',
+            'trace_name': 'trace_trace_t4',
+            'exp_name': 'res-2021-08-26_01-01-31_proxy',
+            'exp_no_proxy_name': 'res-2021-08-25_18-42-06_proxy_no_controller',
+            'slo_timeout': 200,
+        },
+        'toxic_comments_max50': {
+            'service_name': 'bentoml-keras-toxic-comments',
+            'trace_name': 'trace_trace_t4',
+            'exp_name': 'res-2021-08-26_16-16-15_proxy',
+            'exp_no_proxy_name': 'res-2021-08-26_11-29-56_proxy_no_controller',
+            'slo_timeout': 500,
+        },
     },
 }
 
-selected_trace_name = 'trace_trace_wc'
-selected_config = 'fashion_mnist_max100'
+selected_trace_name = 'trace_trace_t4'
+selected_config = 'toxic_comments_max50'
 
 configs = trace_configs[selected_trace_name]
 config = configs[selected_config]
@@ -424,10 +438,10 @@ def plot_over_time_both(**kwargs):
             average_replica_count,
             average_replica_count_no_proxy,
         ],
-        'Average Batch Size (over reqs)': [
-            df_res_resample_mean['upstream_request_count'].mean(),
-            1,
-        ],
+        # 'Average Batch Size (over reqs)': [
+        #     df_res_resample_mean['upstream_request_count'].mean(),
+        #     1,
+        # ],
         'Average Batch Size (over time)': [
             df_proxy_stats['averageActualBatchSize'].mean(),
             1
