@@ -323,7 +323,7 @@ def plot_over_time_both(**kwargs):
     plt.figure(figsize=(4,2.5))
     plt.plot(df_proxy_stats['reponseTimeP95'], label='RT95 (*)')
     plt.plot(df_proxy_stats_no_proxy['reponseTimeP95'], label='RT95')
-    plt.axhline(y=slo_timeout, ls='--', c='r', label='SLA Timeout')
+    plt.axhline(y=slo_timeout, ls='--', c='r', label='SLO Timeout')
     fix_x_axis_timedelta()
     plt.legend()
     plt.xlabel('Time (HH:MM)')
@@ -364,10 +364,10 @@ def plot_over_time_both(**kwargs):
     slo_miss_rates_no_proxy_all = slo_miss_count_no_proxy.sum() / resampled_request_count_no_proxy.sum() * 100
     # plot the slo miss rates
     plt.figure(figsize=(4,2.5))
-    plt.plot(slo_miss_rates, label="SLA Miss (*)")
-    plt.plot(slo_miss_rates_no_proxy, label="SLA Miss")
-    plt.axhline(y=5, ls='--', c='r', label='SLA Thresh')
-    plt.ylabel('SLA Miss Rate (%)')
+    plt.plot(slo_miss_rates, label="SLO Miss (*)")
+    plt.plot(slo_miss_rates_no_proxy, label="SLO Miss")
+    plt.axhline(y=5, ls='--', c='r', label='SLO Thresh')
+    plt.ylabel('SLO Miss Rate (%)')
     plt.xlabel('Time (HH:MM)')
     fix_x_axis_timedelta()
     plt.legend()
